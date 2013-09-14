@@ -2,11 +2,15 @@
 " Description: A funny toy for play with vim colorschemes.
 
 " if exists('g:loaded_colors_funny_toy')
-    " finish
+" finish
 " endif
 " let g:loaded_colors_funny_toy = 1
 
-let mudox#auto_colo#Toy = {} " for global reference.
+" initialize global variable.
+let mudox#auto_colo#Toy = {
+            \ 'curVimColor' : '',
+            \ 'curAirlineColor': ''
+            \ }
 let s:Toy = mudox#auto_colo#Toy " for local conveniently reference.
 
 " collect vim colorscheme files.
@@ -50,70 +54,63 @@ call map(s:Toy.airlineColorAvail, 'fnamemodify(v:val, ":t:r")')
 " endif
 " endif
 
+" show current vim colorscheme & airline theme if any.
 function! s:Toy.showCurColors() dict
-    echo '[Vim] : ' . s:Toy.curVimColor . "\t[Airline] : " . s:Toy.curAirlineColor
+
+    let l:msg = '[Vim] : ' . s:Toy.curVimColor
+    if exists(':AirlineTheme') && len(s:Toy.curAirlineColor) > 0
+        let l:msg = l:msg . "\t\t[Airline] : " . s:Toy.curAirlineColor
+    endif
+
+    echo l:msg
 endfunction
 
-" used after gvim's initialization is finished.
-function! s:Toy.shuffleAfterRC() dict
-    call s:Toy.shuffle()
+" randomly change vim colorscheme & ailne theme if any.
+function! s:Toy.shuffleColor() dict
 
-    execute "colorscheme " . s:Toy.curVimColor
-    execute "AirlineTheme " . s:Toy.curAirlineColor
-    redraw
-
-    call s:Toy.showCurColors()
-endfunction
-
-" used when vim is initializing.
-function! s:Toy.shuffleRC() dict
-    call s:Toy.shuffle()
-
-    execute "colorscheme " . s:Toy.curVimColor
-    let g:airline_theme = s:Toy.curAirlineColor
-
-    autocmd VimEnter * :call s:Toy.showCurColors()
-endfunction
-
-function! s:Toy.shuffle() dict
     " pick a vim colorscheme first.
-    let l:idx = localtime() % len(s:Toy.vimColorAvail)
-    let s:Toy.curVimColor = s:Toy.vimColorAvail[l:idx]
+    let l:idx = localtime() % len(self.vimColorAvail)
+    let self.curVimColor = self.vimColorAvail[l:idx]
 
     " if the there is a airline theme named as the picked vim colorscheme
-    " above, use it, otherwise randomly draw a airline theme.
-    if len(s:Toy.vimColorAvail) > 0
-        if index(s:Toy.airlineColorAvail, s:Toy.curVimColor) >= 0
-            let s:Toy.curAirlineColor = s:Toy.curVimColor
+    " above, use it, otherwise randomly pick a airline theme.
+    if len(self.airlineColorAvail) > 0
+        if index(self.airlineColorAvail, self.curVimColor) >= 0
+            let self.curAirlineColor = self.curVimColor
         else
-            let l:idx = localtime() % len(s:Toy.airlineColorAvail)
-            let s:Toy.curAirlineColor = s:Toy.airlineColorAvail[l:idx]
+            let l:idx = localtime() % len(self.airlineColorAvail)
+            let self.curAirlineColor = self.airlineColorAvail[l:idx]
         endif
-    else
-        let s:Toy.curAirlineColor = ''
     endif
+
+    execute "colorscheme " . self.curVimColor
+
+    if exists(':AirlineTheme') && len(self.curAirlineColor) > 0
+        execute "AirlineTheme " . self.curAirlineColor
+    endif
+
+    redraw
+
+    call self.showCurColors()
+
 endfunction
 
-function! mudox#auto_colo#ShuffleColorRC()
-    call s:Toy.shuffleRC()
-endfunction
-
-function! mudox#auto_colo#ShuffleColorAfterRC()
-    call s:Toy.shuffleAfterRC()
+function mudox#auto_colo#ShuffleColor()
+    call s:Toy.shuffleColor()
 endfunction
 
 " function! mudox#auto_colo#ColoMarquee()
-    " let l:cur_color = g:colors_name
+" let l:cur_color = g:colors_name
 
-    " for c in s:Toy.vim_color_avail
-        " execute "colorscheme " . c
-        " redraw
-        " echo c
-        " sleep 300m
-    " endfor
+" for c in s:Toy.vim_color_avail
+" execute "colorscheme " . c
+" redraw
+" echo c
+" sleep 300m
+" endfor
 
-    " restore previous colorscheme.
-    " execute 'colorscheme ' . l:cur_color
+" restore previous colorscheme.
+" execute 'colorscheme ' . l:cur_color
 " endfunction
 
 " vim: fileformat=unix
