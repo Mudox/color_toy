@@ -20,6 +20,11 @@ endfunction
 function s:Toy.saveConfig() dict
     let l:lines = []
     for [l:cntx, l:score_board] in items(self.setting_pool)
+        " skip empty boards.
+        if empty(l:score_board)
+            continue
+        endif
+
         let l:line = l:cntx . ':'
         let l:list = []
         for [l:name, l:count] in items(l:score_board)
@@ -114,7 +119,7 @@ function s:Toy.showCurColors() dict
 endfunction
 
 " TODO: implement the new mechanism.
-function s:Toy.shuffleColor() dict
+function s:Toy.old_shuffleColor() dict
 
     " pick a vim colorscheme first.
     let l:idx = localtime() % len(self.vimColorAvail)
@@ -141,6 +146,41 @@ function s:Toy.shuffleColor() dict
 
     call self.showCurColors()
 
+endfunction
+
+" TODO: unfinished
+function s:Toy.shuffleColor() dict
+    " make a full score board for all available colors. 
+    let l:full_board = {}
+    for l:name in self.vimColorAvail()
+        l:full_board[l:name] = 0
+    endfor
+
+    let l:recorded_board = self.curScoreBoard()
+    for [l:name, l:count] in items(l:recorded_board)
+        if has_key(l:full_board, l:name)
+            l:full_board[l:name] = l:count
+        endif
+    endfor
+
+    function l:cntDesc(lhs, rhs)
+        return a:lhs == a:rhs ? 0 : a:lhs > a:rhs ? -1 : 1
+    endfunction
+    call sort(l:full_board, l:cntDesc)
+
+    " 6 3 1 scheme
+
+endfunction
+
+function s:Toy.curScoreBoard(vim_or_airline) dict
+    let l:cntx = self.curContext() . '_' . a:vim_or_airline
+
+    " if empty, initiali it to {}.
+    if !has_key(sef.setting_pool, l:cntx)
+        self.setting_pool[l:cntx] = {}
+    endif
+
+    return self.setting_pool[l:cntx]
 endfunction
 
 call s:Toy.init()
