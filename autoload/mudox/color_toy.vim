@@ -2,7 +2,7 @@
 " Description: A funny toy for play with vim colorschemes.
 
 "if exists('loaded_mudox_color_toy_options') || &cp || version < 700
-    "finish
+"finish
 "endif
 "let loaded_mudox_color_toy_options = 1
 
@@ -118,6 +118,50 @@ function s:Toy.showCurColors() dict
     echo l:msg
 endfunction
 
+" TODO: implementing, unfinished
+function s:Toy.vimColorVirtualBoard() dict
+    let l:virtual_board = {}
+    " initialize all color with 0 count
+    for l:name in self.vimColorAvail()
+        let l:virtual_board[l:name] = 0
+    endfor
+
+    " merge recored scores into virtual board, for all
+    " available colors.
+    let l:recorded_board = self.curScoreBoard('vim')
+
+    " panic and quit if not enough colorscheme are available.
+    if len(l:recorded_board) <= 3
+        echoerr 'Found colorscheme files: ' . join(l:recorded_board, ', ')
+        echoerr 'Not enough colorscheme files found, need at least 4 colorscheme files.'
+        throw "mudox#color_toy: Inadequate colorscheme files"
+    endif
+
+    for [l:name, l:count] in items(l:recorded_board)
+        if has_key(l:virtual_board, l:name)
+            let l:virtual_board[l:name] = l:count
+        endif
+    endfor
+
+    " flatten the dictr to a list for sorting
+    let l:score_list = []
+    for [l:name, l:count] in items(l:virtual_board)
+        let l:score_list = add(l:score_list, [l:name, l:count])
+    endfor
+
+    " sort by count in descending order
+    function l:cntDesc(lhs, rhs)
+        "return a:lhs[1] == a:rhs[1] ? 0 : a:lhs[1] > a:rhs[1] ? -1 : 1
+        return -(a:lhs[1] - a:rhs[1])
+    endfunction
+    call sort(l:score_list, 'l:cntDesc')
+    return l:score_list
+endfunction
+
+" TODO: unimplemented
+function s:Toy.airlineVirtualBoard() dict
+endfunction
+
 " TODO: implement the new mechanism.
 function s:Toy.old_shuffleColor() dict
 
@@ -150,25 +194,28 @@ endfunction
 
 " TODO: unfinished
 function s:Toy.shuffleColor() dict
-    " make a full score board for all available colors. 
-    let l:full_board = {}
-    for l:name in self.vimColorAvail()
-        l:full_board[l:name] = 0
-    endfor
+    let l:board_list = self.vimColorVirtualBoard()
 
-    let l:recorded_board = self.curScoreBoard()
-    for [l:name, l:count] in items(l:recorded_board)
-        if has_key(l:full_board, l:name)
-            l:full_board[l:name] = l:count
-        endif
-    endfor
+    "for l:idx in range(len(l:score_list))
+        "echo printf("%25s -> %3d  ", 
+                    "\ l:score_list[l:idx][0], l:score_list[l:idx][1])
+    "endfor
 
-    function l:cntDesc(lhs, rhs)
-        return a:lhs == a:rhs ? 0 : a:lhs > a:rhs ? -1 : 1
-    endfunction
-    call sort(l:full_board, l:cntDesc)
+    " 6-3-1 scheme randomization.
+    let l:len      = len(l:board_list)
+    let l:delim_1  = float2nr(l:len * ( 1.0 / 10.0 ))
+    let l:delim_2  = float2nr(l:len * ( 4.0 / 10.0 ))
+    let low_queue  = l:board_list[              : l:delim_1]
+    let mid_queue  = l:board_list[l:delim_1 + 1 : l:delim_2]
+    let high_queue = l:board_list[l:delim_2 + 1 :          ]
 
-    " 6 3 1 scheme
+    echo low_queue
+    echo
+    echo mid_queue
+    echo
+    echo high_queue
+
+    " now let's shuffle up.
 
 endfunction
 
@@ -176,7 +223,7 @@ function s:Toy.curScoreBoard(vim_or_airline) dict
     let l:cntx = self.curContext() . '_' . a:vim_or_airline
 
     " if empty, initiali it to {}.
-    if !has_key(sef.setting_pool, l:cntx)
+    if !has_key(self.setting_pool, l:cntx)
         self.setting_pool[l:cntx] = {}
     endif
 
@@ -187,28 +234,30 @@ call s:Toy.init()
 
 " public interface
 "function mudox#auto_colo#ShuffleColor()
-    "call s:Toy.shuffleColor()
+"call s:Toy.shuffleColor()
 "endfunction
 
 "let s:curCntx = s:Toy.curContext() . '_vim'
 "let s:Toy.setting_pool[s:curCntx] = {
-            "\ 'desert'     : 23,
-            "\ 'desert_mdx' : 39,
-            "\ 'luna'       : 16,
-            "\ 'night'      : 11,
-            "\ 'jellybeans' : 25,
-            "\ 'molokai'    : 33,
-            "\ 'grubox'     : 18,
-            "\ 'blackboard' : 23,
-            "\ 'inkpot'     : 34,
-            "\ 'desertink'  : 60,
-            "\ 'autumn'     : 37,
-            "\ 'solarized'  : 28,
-            "\ 'default'    : 7,
-            "\ }
+"\ 'desert'     : 23,
+"\ 'desert_mdx' : 39,
+"\ 'luna'       : 16,
+"\ 'night'      : 11,
+"\ 'jellybeans' : 25,
+"\ 'molokai'    : 33,
+"\ 'grubox'     : 18,
+"\ 'blackboard' : 23,
+"\ 'inkpot'     : 34,
+"\ 'desertink'  : 60,
+"\ 'autumn'     : 37,
+"\ 'solarized'  : 28,
+"\ 'default'    : 7,
+"\ }
 
 "echo s:Toy.setting_pool
 
 "call s:Toy.saveConfig()
 
 "echo s:Toy.curContext()
+
+call s:Toy.shuffleColor()
