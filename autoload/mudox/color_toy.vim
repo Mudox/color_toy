@@ -1,27 +1,40 @@
 " Author: Mudox
 " Description: A funny toy for play with vim colorschemes.
 
-"if exists('loaded_mudox_color_toy_options') || &cp || version < 700
-"finish
-"endif
-"let loaded_mudox_color_toy_options = 1
+if exists('loaded_autoload_mudox_color_toy') || &cp || version < 700
+  finish
+endif
+let loaded_autoload_mudox_color_toy = 1
 
-let mudox#color_toy#options#Toy = {}
-let s:Toy = mudox#color_toy#options#Toy " local shortened alias
+let mudox#color_toy#Toy = {}
+let s:Toy = mudox#color_toy#Toy " local shortened alias
+let g:mdx = s:Toy   " for test 
 
 function s:Toy.init() dict
-  let self.filename = expand(get(g:, "color_toy_config_file",
-	\ '~/.vim_color_toy'))
+  let self.fileName = expand(get(g:, "color_toy_stat_file",
+        \ '~/.vim_color_toy'))
+
+  let self.contextPattern = '^\m\C'
+          \ . '\%(gui\|term\)_'
+          \ . '\%(light\|dark\)_'
+          \ . '\%(\f\+\)_'
+          \ . '\%(vim\|airline\)'
+
+  let self.lastContext = self.curContext()
   let self.lastVimColor = self.getCurVimColor()
+
   let self.lastAirlineTheme = ''
-  let self.setting_pool = {}
-  call self.loadConfig()
+  let self.stat_pool = {}
+
+  call self.loadStat()
+
+  call self.incrementPoint(self.lastContext, self.lastVimColor)
 endfunction
 
-function s:Toy.saveConfig() dict
+function s:Toy.saveStat() dict
   let l:lines = []
-  "echo self.setting_pool | " test
-  for [l:cntx, l:score_board] in items(self.setting_pool)
+  "echo self.stat_pool | " test
+  for [l:cntx, l:score_board] in items(self.stat_pool)
     " skip all virtually empty boards.
     call filter(l:score_board, 'v:val != 0')
     if empty(l:score_board)
@@ -37,23 +50,18 @@ function s:Toy.saveConfig() dict
     let l:lines = add(l:lines, l:line)
   endfor
   "echo l:lines | " test 
-  call writefile(l:lines, self.filename)
+  call writefile(l:lines, self.fileName)
 endfunction
 
-function s:Toy.loadConfig() dict
-  if filereadable(self.filename)
-    let l:lines = readfile(self.filename)
+function s:Toy.loadStat() dict
+  if filereadable(self.fileName)
+    let l:lines = readfile(self.fileName)
 
     " verify the content
-    let l:line_pat = '^\m\C'
-	  \ . '\%(gui\|term\)_'
-	  \ . '\%(light\|dark\)_'
-	  \ . '\%(\f\+\)_'
-	  \ . '\%(vim\|airline\):'
     for l:line in l:lines
-      if l:line !~# l:line_pat
-	echoerr 'Invalied content in ' . expand(self.filename)
-	return 0
+      if l:line !~# self.contextPattern
+        echoerr 'Invalied content in ' . expand(self.fileName)
+        return 0
       endif
     endfor
 
@@ -62,10 +70,10 @@ function s:Toy.loadConfig() dict
       let l:cntx = l:cntx_and_score_board[0]
       let l:score_board = split(l:cntx_and_score_board[1], ',')
 
-      let self.setting_pool[l:cntx] = {}
+      let self.stat_pool[l:cntx] = {}
       for l:record in l:score_board
-	let [l:name, l:count] = split(l:record, '#')
-	let self.setting_pool[l:cntx][l:name] = l:count
+        let [l:name, l:count] = split(l:record, '#')
+        let self.stat_pool[l:cntx][l:name] = l:count
       endfor
     endfor
   endif
@@ -75,7 +83,9 @@ function s:Toy.curContext() dict
   let l:gui_or_term = has('gui_running') ? 'gui' : 'term'
   let l:light_or_dark = &background
   let l:filetype = len(&filetype) ? &filetype : 'untyped'
-  return join([l:gui_or_term, l:light_or_dark, l:filetype], '_')
+
+  " TODO: currently only implement vim part, left airline part for next time.
+  return join([l:gui_or_term, l:light_or_dark, l:filetype, 'vim'], '_')
 endfunction
 
 function s:Toy.vimColorAvail() dict
@@ -98,7 +108,7 @@ function s:Toy.vimColorVirtualBoard() dict
     let l:virtual_board[l:name] = 0
   endfor
 
-  let l:recorded_board = self.curScoreBoard('vim')
+  let l:recorded_board = self.getScoreBoard(self.curContext())
 
   " panic and quit if not enough colorscheme are available.
   if len(l:virtual_board) <= 3
@@ -133,12 +143,9 @@ function s:cntDesc(lhs, rhs)
 endfunction
 
 function s:Toy.roll() dict
+  " build virtual score board & exclud last color from it.
   let l:board = self.vimColorVirtualBoard()
-
-  "for l:idx in range(len(l:board))
-  "echo printf("%25s -> %3d  ", 
-  "\ l:board[l:idx][0], l:board[l:idx][1])
-  "endfor
+  unlet l:board[self.lastVimColor]
 
   " 6-3-1 scheme randomization.
   let l:len        = len(l:board)
@@ -147,12 +154,6 @@ function s:Toy.roll() dict
   let l:high_queue = l:board[              : l:delim_1]
   let l:mid_queue  = l:board[l:delim_1 + 1 : l:delim_2]
   let l:low_queue  = l:board[l:delim_2 + 1 :          ]
-
-  "echo l:low_queue
-  "echo
-  "echo l:mid_queue
-  "echo
-  "echo l:high_queue
 
   " now let's shuffle up.
   let l:dice = localtime() % 10
@@ -168,23 +169,25 @@ function s:Toy.roll() dict
   return l:pool[l:win_num][0] " only return color name.
 endfunction
 
-function s:Toy.curScoreBoard(vim_or_airline) dict
-  if a:vim_or_airline !~# '\mvim\|airline'
-    throw 's:Toy.curScoreBoard() needs a string "vim" or "airline" as its argument'
+function s:Toy.getScoreBoard(context) dict
+  if a:context !~# self.contextPattern
+    throw 's:Toy.getScoreBoard(context) gots an invalid a:context string'
   endif
-
-  let l:cntx = self.curContext() . '_' . a:vim_or_airline
 
   " if empty, initiali it to {}.
-  if !has_key(self.setting_pool, l:cntx)
-    let self.setting_pool[l:cntx] = {}
+  if !has_key(self.stat_pool, a:context)
+    let self.stat_pool[a:context] = {}
   endif
 
-  return self.setting_pool[l:cntx]
+  return self.stat_pool[a:context]
 endfunction
 
-function s:Toy.getPoint(vim_or_arline, name) dict
-  let l:board = self.curScoreBoard(a:vim_or_arline)
+function s:Toy.getPoint(context, name) dict
+  if a:context !~# self.contextPattern
+    throw 's:Toy.getPoint(context, name) gots an invalid a:context string'
+  endif
+
+  let l:board = self.getScoreBoard(a:context)
   if !has_key(l:board, a:name)
     let l:board[a:name] = 0
   endif
@@ -193,16 +196,19 @@ endfunction
 
 function s:Toy.onColorScheme() dict
   let l:new_color = self.getCurVimColor()
-  "echo self.setting_pool | " test
+  "echo self.stat_pool | " test
 
   " decrement old color's point.
-  call self.decrementPoint('vim', self.lastVimColor)
+  call self.decrementPoint(self.lastContext, self.lastVimColor)
+
+  let l:old_color = self.lastVimColor
   let self.lastVimColor = l:new_color
+  let self.lastContext = self.curContext()
 
   " increment new color's point.
-  call self.incrementPoint('vim', l:new_color)
+  call self.incrementPoint(self.curContext(), l:new_color)
 
-  "echo self.setting_pool | " test
+  echoerr printf("Toy.onColorScheme() called: %s -> %s", l:old_color, l:new_color)
 endfunction
 
 function s:Toy.getCurVimColor() dict
@@ -212,33 +218,48 @@ function s:Toy.getCurVimColor() dict
   return g:colors_name
 endfunction
 
-function s:Toy.setPoint(vim_or_arline, name, point) dict
+function s:Toy.setPoint(context, name, point) dict
+  if a:context !~# self.contextPattern
+    throw 's:Toy.setPoint(context, name) gots an invalid a:context string'
+  endif
+
   if empty(a:name)
     echoerr 'Empty name arg for setPoint()'
     return
   endif
-  let l:board = self.curScoreBoard(a:vim_or_arline)
+  let l:board = self.getScoreBoard(a:context)
   let l:board[a:name] = a:point
 endfunction
 
-function s:Toy.incrementPoint(vim_or_airline, name) dict
+function s:Toy.incrementPoint(context, name) dict
+  if a:context !~# self.contextPattern
+    throw 's:Toy.incrementPoint(context, name) gots an invalid a:context string'
+  endif
+
+
   if empty(a:name)
     echoerr 'Empty name arg for incrementPoint()'
     return
   endif
-  call self.setPoint(a:vim_or_airline, a:name, 
-	\ max([0, self.getPoint(a:vim_or_airline, a:name) + 1])
-	\ )
+
+  call self.setPoint(a:context, a:name, 
+        \ max([0, self.getPoint(a:context, a:name) + 1])
+        \ )
 endfunction
 
-function s:Toy.decrementPoint(vim_or_airline, name) dict
+function s:Toy.decrementPoint(context, name) dict
+  if a:context !~# self.contextPattern
+    throw 's:Toy.decrementPoint(context, name) gots an invalid a:context string'
+  endif
+
   if empty(a:name)
     echoerr 'Empty name arg for decrementPoint()'
     return
   endif
-  call self.setPoint(a:vim_or_airline, a:name, 
-	\ max([0, self.getPoint(a:vim_or_airline, a:name) - 1])
-	\ )
+
+  call self.setPoint(a:context, a:name, 
+        \ max([0, self.getPoint(a:context, a:name) - 1])
+        \ )
 endfunction
 
 function s:Toy.nextVimColor() dict
@@ -261,7 +282,6 @@ function s:Toy.coloMarquee() dict
   " execute 'colorscheme ' . l:cur_color
 endfunction
 
-" TODO: adapt it to new host
 function s:Toy.showCurColors() dict
   let l:msg = '[Vim] : ' . self.getCurVimColor()
   if exists(':AirlineTheme') && len(self.lastAirlineTheme) > 0
@@ -275,9 +295,25 @@ endfunction
 function s:Toy.airlineVirtualBoard() dict
 endfunction
 
+call s:Toy.init()
+
 " public interface
-function mudox#color_toy#NextColor()
-  call s:Toy.roll()
+function mudox#color_toy#On_ColorScheme()
+    call s:Toy.onColorScheme()
 endfunction
 
-call s:Toy.init()
+function mudox#color_toy#On_VimLeavePre()
+    call s:Toy.saveStat()
+endfunction
+
+function mudox#color_toy#On_VimEnter()
+    call s:Toy.nextVimColor()
+endfunction
+
+function mudox#color_toy#NextColor()
+    call s:Toy.nextVimColor()
+endfunction
+
+function mudox#color_toy#ShowCurColors()
+    call s:Toy.showCurColors()
+endfunction
