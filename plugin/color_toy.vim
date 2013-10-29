@@ -28,10 +28,14 @@ function s:Toy.init() dict
 endfunction
 
 function s:Toy.saveStat() dict
+  if self.lastContext !=# self.curContext()
+    call self.decrementPoint(self.lastContext, self.lastVimColor)
+    call self.incrementPoint(self.curContext(), self.lastVimColor)
+  endif
+
   let lines = []
-  "echo self.stat_pool | " test
   for [cntx, score_board] in items(self.stat_pool)
-    " skip all virtually empty boards.
+    " skip all virtually empty items.
     call filter(score_board, 'v:val != 0')
     if empty(score_board)
       continue
@@ -45,7 +49,7 @@ function s:Toy.saveStat() dict
     let line = line . join(list, ',')
     let lines = add(lines, line)
   endfor
-  "echo lines | " test 
+
   call writefile(lines, self.fileName)
 endfunction
 
