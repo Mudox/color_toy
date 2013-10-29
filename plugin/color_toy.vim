@@ -1,14 +1,7 @@
 if exists("loaded_color_toy_plugin_color_toy") || &cp || version < 700
-    finish
+  finish
 endif
 let loaded_color_toy_plugin_color_toy = 1
-
-nnoremap <Plug>NextColor  :<C-U>call s:Toy.nextVimColor()<Cr>
-nnoremap <Plug>ShowCurColors  :<C-U>call s:Toy.showCurColors()<Cr>
-
-autocmd ColorScheme * call s:Toy.onColorScheme()
-autocmd VimLeavePre * call s:Toy.saveStat()
-autocmd VimEnter    * call s:Toy.nextVimColor()
 
 let s:Toy = {} " local shortened alias
 let g:mdx = s:Toy   " for test 
@@ -18,10 +11,10 @@ function s:Toy.init() dict
         \ '~/.vim_color_toy'))
 
   let self.contextPattern = '^\m\C'
-          \ . '\%(gui\|term\)_'
-          \ . '\%(light\|dark\)_'
-          \ . '\%(\f\+\)_'
-          \ . '\%(vim\|airline\)'
+        \ . '\%(gui\|term\)_'
+        \ . '\%(light\|dark\)_'
+        \ . '\%(\f\+\)_'
+        \ . '\%(vim\|airline\)'
 
   let self.lastContext = self.curContext()
   let self.lastVimColor = self.getCurVimColor()
@@ -211,7 +204,12 @@ function s:Toy.onColorScheme() dict
   " increment new color's point.
   call self.incrementPoint(self.curContext(), l:new_color)
 
-  echoerr printf("Toy.onColorScheme() called: %s -> %s", l:old_color, l:new_color)
+  echo printf("Toy.onColorScheme() called: %s -> %s", l:old_color, l:new_color)
+endfunction
+
+function s:Toy.onVimEnter() dict
+  call self.nextVimColor()
+  call self.onColorScheme()
 endfunction
 
 function s:Toy.getCurVimColor() dict
@@ -299,3 +297,21 @@ function s:Toy.airlineVirtualBoard() dict
 endfunction
 
 call s:Toy.init()
+
+function <SID>NextVimColor() 
+  call s:Toy.nextVimColor() 
+endfunction
+
+function <SID>ShowCurColors() 
+  call s:Toy.showCurColors() 
+endfunction
+
+nnoremap <Plug>(Mdx_Color_Toy_NextColor)  :<C-U>call <SID>NextVimColor()<Cr>
+nnoremap <Plug>(Mdx_Color_Toy_ShowCurColors)  :<C-U>call <SID>ShowCurColors()<Cr>
+
+augroup Mdx_Color_Toy
+  autocmd!
+  autocmd ColorScheme * call s:Toy.onColorScheme()
+  autocmd VimLeavePre * call s:Toy.saveStat()
+  autocmd VimEnter    * call s:Toy.onVimEnter()
+augroup END
