@@ -28,109 +28,113 @@ function s:Toy.init() dict
 endfunction
 
 function s:Toy.saveStat() dict
-  let l:lines = []
+  let lines = []
   "echo self.stat_pool | " test
-  for [l:cntx, l:score_board] in items(self.stat_pool)
+  for [cntx, score_board] in items(self.stat_pool)
     " skip all virtually empty boards.
-    call filter(l:score_board, 'v:val != 0')
-    if empty(l:score_board)
+    call filter(score_board, 'v:val != 0')
+    if empty(score_board)
       continue
     endif
 
-    let l:line = l:cntx . ':'
-    let l:list = []
-    for [l:name, l:count] in items(l:score_board)
-      let l:list = add(l:list, l:name . '#' . l:count)
+    let line = cntx . ':'
+    let list = []
+    for [name, cnt] in items(score_board)
+      let list = add(list, name . '#' . cnt)
     endfor
-    let l:line = l:line . join(l:list, ',')
-    let l:lines = add(l:lines, l:line)
+    let line = line . join(list, ',')
+    let lines = add(lines, line)
   endfor
-  "echo l:lines | " test 
-  call writefile(l:lines, self.fileName)
+  "echo lines | " test 
+  call writefile(lines, self.fileName)
 endfunction
 
 function s:Toy.loadStat() dict
   if filereadable(self.fileName)
-    let l:lines = readfile(self.fileName)
+    let lines = readfile(self.fileName)
 
     " verify the content
-    for l:line in l:lines
-      if l:line !~# self.contextPattern
+    for line in lines
+      if line !~# self.contextPattern
         echoerr 'Invalied content in ' . expand(self.fileName)
         return 0
       endif
     endfor
 
-    for l:line in l:lines
-      let l:cntx_and_score_board = split(l:line, ':')
-      let l:cntx = l:cntx_and_score_board[0]
-      let l:score_board = split(l:cntx_and_score_board[1], ',')
+    for line in lines
+      let cntx_and_score_board = split(line, ':')
+      let cntx = cntx_and_score_board[0]
+      let score_board = split(cntx_and_score_board[1], ',')
 
-      let self.stat_pool[l:cntx] = {}
-      for l:record in l:score_board
-        let [l:name, l:count] = split(l:record, '#')
-        let self.stat_pool[l:cntx][l:name] = l:count
+      let self.stat_pool[cntx] = {}
+      for record in score_board
+        let [name, cnt] = split(record, '#')
+        if cnt !~ '\m[0-9]\+'
+          echoerr 'Invalid count string in ' . expand(self.fileName)
+        endif
+        let cnt = str2nr(cnt) " return 0 in case a invalid string.
+        let self.stat_pool[cntx][name] = cnt
       endfor
     endfor
   endif
 endfunction
 
 function s:Toy.curContext() dict
-  let l:gui_or_term = has('gui_running') ? 'gui' : 'term'
-  let l:light_or_dark = &background
-  let l:filetype = len(&filetype) ? &filetype : 'untyped'
+  let gui_or_term = has('gui_running') ? 'gui' : 'term'
+  let light_or_dark = &background
+  let filetype = len(&filetype) ? &filetype : 'untyped'
 
   " TODO: currently only implement vim part, left airline part for next time.
-  return join([l:gui_or_term, l:light_or_dark, l:filetype, 'vim'], '_')
+  return join([gui_or_term, light_or_dark, filetype, 'vim'], '_')
 endfunction
 
 function s:Toy.vimColorAvail() dict
-  let l:list = split(globpath(&rtp, 'colors/*.vim', 1), '\n')
-  call map(l:list, 'fnamemodify(v:val, ":t:r")')
-  return l:list
+  let list = split(globpath(&rtp, 'colors/*.vim', 1), '\n')
+  call map(list, 'fnamemodify(v:val, ":t:r")')
+  return list
 endfunction
 
 function s:Toy.airlineThemeAvail() dict
-  let l:list = split(globpath(&rtp, 'autoload/airline/themes/*.vim', 1), '\n')
-  echo l:list
-  call map(l:list, 'fnamemodify(v:val, ":t:r")')
-  return l:list
+  let list = split(globpath(&rtp, 'autoload/airline/themes/*.vim', 1), '\n')
+  echo list
+  call map(list, 'fnamemodify(v:val, ":t:r")')
+  return list
 endfunction
 
 function s:Toy.vimColorVirtualBoard() dict
-  let l:virtual_board = {}
-  " initialize all color with 0 count
-  for l:name in self.vimColorAvail()
-    let l:virtual_board[l:name] = 0
+  let virtual_board = {}
+  " initialize all color with 0 cnt
+  for name in self.vimColorAvail()
+    let virtual_board[name] = 0
   endfor
 
-  let l:recorded_board = self.getScoreBoard(self.curContext())
+  let recorded_board = self.getScoreBoard(self.curContext())
 
   " panic and quit if not enough colorscheme are available.
-  if len(l:virtual_board) <= 3
-    echoerr 'Found colorscheme files: ' . join(l:virtual_board, ', ')
+  if len(virtual_board) <= 3
+    echoerr 'Found colorscheme files: ' . join(virtual_board, ', ')
     echoerr 'Not enough colorscheme files found, need at least 4 colorscheme files.'
     throw "mudox#color_toy: Inadequate colorscheme files"
   endif
 
   " merge recored scores into virtual board, for all
   " available colors.
-  for [l:name, l:count] in items(l:recorded_board)
-    if has_key(l:virtual_board, l:name)
-      let l:virtual_board[l:name] = l:count
+  for [name, cnt] in items(recorded_board)
+    if has_key(virtual_board, name)
+      let virtual_board[name] = cnt
     endif
   endfor
 
-  "echo l:virtual_board
+  "echo virtual_board
   " flatten the dict to a list for sorting
-  let l:score_list = []
-  for [l:name, l:count] in items(l:virtual_board)
-    let l:score_list = add(l:score_list, [l:name, l:count])
+  let score_list = []
+  for [name, cnt] in items(virtual_board)
+    let score_list = add(score_list, [name, cnt])
   endfor
 
-  " sort by count in descending order
-  call sort(l:score_list, 's:cntDesc')
-  return l:score_list
+  " sort by cnt in descending order
+  call sort(score_list, 's:cntDesc')
+  return score_list
 endfunction
 
 function s:cntDesc(lhs, rhs)
@@ -140,29 +144,29 @@ endfunction
 
 function s:Toy.roll() dict
   " build virtual score board & exclud last color from it.
-  let l:board = self.vimColorVirtualBoard()
-  unlet l:board[self.lastVimColor]
+  let board = self.vimColorVirtualBoard()
+  unlet board[self.lastVimColor]
 
   " 6-3-1 scheme randomization.
-  let l:len        = len(l:board)
-  let l:delim_1    = float2nr(l:len * ( 1.0 / 10.0 ))
-  let l:delim_2    = float2nr(l:len * ( 4.0 / 10.0 ))
-  let l:high_queue = l:board[              : l:delim_1]
-  let l:mid_queue  = l:board[l:delim_1 + 1 : l:delim_2]
-  let l:low_queue  = l:board[l:delim_2 + 1 :          ]
+  let len        = len(board)
+  let delim_1    = float2nr(len * ( 1.0 / 10.0 ))
+  let delim_2    = float2nr(len * ( 4.0 / 10.0 ))
+  let high_queue = board[              : delim_1]
+  let mid_queue  = board[delim_1 + 1 : delim_2]
+  let low_queue  = board[delim_2 + 1 :          ]
 
   " now let's shuffle up.
-  let l:dice = localtime() % 10
-  if l:dice < 6                 " 60% chance
-    let l:pool = l:high_queue
-  elseif l:dice < 9             " 30% chance
-    let l:pool = l:mid_queue
+  let dice = localtime() % 10
+  if dice < 6                 " 60% chance
+    let pool = high_queue
+  elseif dice < 9             " 30% chance
+    let pool = mid_queue
   else                          " 10% chance
-    let l:pool = l:low_queue
+    let pool = low_queue
   endif
 
-  let l:win_num = localtime() % len(l:pool)
-  return l:pool[l:win_num][0] " only return color name.
+  let win_num = localtime() % len(pool)
+  return pool[win_num][0] " only return color name.
 endfunction
 
 function s:Toy.getScoreBoard(context) dict
@@ -183,28 +187,28 @@ function s:Toy.getPoint(context, name) dict
     throw 's:Toy.getPoint(context, name) gots an invalid a:context string'
   endif
 
-  let l:board = self.getScoreBoard(a:context)
-  if !has_key(l:board, a:name)
-    let l:board[a:name] = 0
+  let board = self.getScoreBoard(a:context)
+  if !has_key(board, a:name)
+    let board[a:name] = 0
   endif
-  return l:board[a:name]
+  return board[a:name]
 endfunction
 
 function s:Toy.onColorScheme() dict
-  let l:new_color = self.getCurVimColor()
+  let new_color = self.getCurVimColor()
   "echo self.stat_pool | " test
 
   " decrement old color's point.
   call self.decrementPoint(self.lastContext, self.lastVimColor)
 
-  let l:old_color = self.lastVimColor
-  let self.lastVimColor = l:new_color
+  let old_color = self.lastVimColor
+  let self.lastVimColor = new_color
   let self.lastContext = self.curContext()
 
   " increment new color's point.
-  call self.incrementPoint(self.curContext(), l:new_color)
+  call self.incrementPoint(self.curContext(), new_color)
 
-  echo printf("Toy.onColorScheme() called: %s -> %s", l:old_color, l:new_color)
+  echo printf("Toy.onColorScheme() called: %s -> %s", old_color, new_color)
 endfunction
 
 function s:Toy.onVimEnter() dict
@@ -228,8 +232,8 @@ function s:Toy.setPoint(context, name, point) dict
     echoerr 'Empty name arg for setPoint()'
     return
   endif
-  let l:board = self.getScoreBoard(a:context)
-  let l:board[a:name] = a:point
+  let board = self.getScoreBoard(a:context)
+  let board[a:name] = a:point
 endfunction
 
 function s:Toy.incrementPoint(context, name) dict
@@ -264,13 +268,13 @@ function s:Toy.decrementPoint(context, name) dict
 endfunction
 
 function s:Toy.nextVimColor() dict
-  let l:picked = self.roll()
-  execute 'colorscheme ' . l:picked
+  let picked = self.roll()
+  execute 'colorscheme ' . picked
 endfunction
 
 " TODO: reimplement it
 function s:Toy.coloMarquee() dict
-  " let l:cur_color = g:colors_name
+  " let cur_color = g:colors_name
 
   " for c in s:Toy.vim_color_avail
   " execute "colorscheme " . c
@@ -280,16 +284,16 @@ function s:Toy.coloMarquee() dict
   " endfor
 
   " restore previous colorscheme.
-  " execute 'colorscheme ' . l:cur_color
+  " execute 'colorscheme ' . cur_color
 endfunction
 
 function s:Toy.showCurColors() dict
-  let l:msg = '[Vim] : ' . self.getCurVimColor()
+  let msg = '[Vim] : ' . self.getCurVimColor()
   if exists(':AirlineTheme') && len(self.lastAirlineTheme) > 0
-    let l:msg = l:msg . "\t\t[Airline] : " . self.lastAirlineTheme
+    let msg = msg . "\t\t[Airline] : " . self.lastAirlineTheme
   endif
 
-  echo l:msg
+  echo msg
 endfunction
 
 " TODO: unimplemented
