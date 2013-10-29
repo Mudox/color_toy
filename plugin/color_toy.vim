@@ -83,6 +83,12 @@ function s:Toy.loadStat() dict
   endif
 endfunction
 
+" clear statistic file and s:Toy.stat_pool.
+function s:Toy.resetStat() dict
+  call delete(self.fileName)
+  call self.init()
+endfunction
+
 function s:Toy.curContext() dict
   let gui_or_term = has('gui_running') ? 'gui' : 'term'
   let light_or_dark = &background
@@ -95,6 +101,7 @@ endfunction
 function s:Toy.vimColorAvail() dict
   let list = split(globpath(&rtp, 'colors/*.vim', 1), '\n')
   call map(list, 'fnamemodify(v:val, ":t:r")')
+
   return list
 endfunction
 
@@ -141,6 +148,8 @@ function s:Toy.vimColorVirtualBoard() dict
   return score_list
 endfunction
 
+" used by s:Toy.roll() below to sort color points records by their point in
+" descending order.
 function s:cntDesc(lhs, rhs)
   "return a:lhs[1] == a:rhs[1] ? 0 : a:lhs[1] > a:rhs[1] ? -1 : 1
   return -(a:lhs[1] - a:rhs[1])
