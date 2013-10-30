@@ -83,8 +83,9 @@ function s:Toy.loadStat() dict
   endif
 endfunction
 
-" clear statistic file and s:Toy.stat_pool.
 function s:Toy.resetStat() dict
+  " clear statistic file and s:Toy.stat_pool.
+
   call delete(self.fileName)
   call self.init()
 endfunction
@@ -148,10 +149,10 @@ function s:Toy.vimColorVirtualBoard() dict
   return score_list
 endfunction
 
-" used by s:Toy.roll() below to sort color points records by their point in
-" descending order.
 function s:cntDesc(lhs, rhs)
-  "return a:lhs[1] == a:rhs[1] ? 0 : a:lhs[1] > a:rhs[1] ? -1 : 1
+  " used by s:Toy.roll() below to sort color points records by their point in
+  " descending order.
+
   return -(a:lhs[1] - a:rhs[1])
 endfunction
 
