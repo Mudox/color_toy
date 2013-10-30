@@ -332,3 +332,5 @@ augroup Mdx_Color_Toy
   autocmd VimLeavePre * call s:Toy.saveStat()
   autocmd VimEnter    * call s:Toy.onVimEnter()
 augroup END
+
+command -nargs=0 ColorToyReset call s:Toy.resetStat()
