@@ -4,7 +4,7 @@ endif
 let loaded_color_toy_plugin_color_toy = 1
 
 let s:Toy = {} " local shortened alias
-let g:mdx = s:Toy   " for test 
+let g:mdx = s:Toy   " for test
 
 function s:Toy.init() dict
   let self.fileName = expand(get(g:, "color_toy_stat_file",
@@ -226,7 +226,11 @@ endfunction
 
 function s:Toy.onVimEnter() dict
   call self.nextVimColor()
+  " by default, vim event dost no allow nesting.
+  " simulate ColorScheme that the above .nextVimColor() call would incur.
   call self.onColorScheme()
+  redraw
+  call self.showCurColors()
 endfunction
 
 function s:Toy.getCurVimColor() dict
@@ -260,7 +264,7 @@ function s:Toy.incrementPoint(context, name) dict
     return
   endif
 
-  call self.setPoint(a:context, a:name, 
+  call self.setPoint(a:context, a:name,
         \ max([0, self.getPoint(a:context, a:name) + 1])
         \ )
 endfunction
@@ -275,7 +279,7 @@ function s:Toy.decrementPoint(context, name) dict
     return
   endif
 
-  call self.setPoint(a:context, a:name, 
+  call self.setPoint(a:context, a:name,
         \ max([0, self.getPoint(a:context, a:name) - 1])
         \ )
 endfunction
@@ -315,12 +319,12 @@ endfunction
 
 call s:Toy.init()
 
-function <SID>NextVimColor() 
-  call s:Toy.nextVimColor() 
+function <SID>NextVimColor()
+  call s:Toy.nextVimColor()
 endfunction
 
-function <SID>ShowCurColors() 
-  call s:Toy.showCurColors() 
+function <SID>ShowCurColors()
+  call s:Toy.showCurColors()
 endfunction
 
 nnoremap <Plug>(Mdx_Color_Toy_NextColor)  :<C-U>call <SID>NextVimColor()<Cr>
