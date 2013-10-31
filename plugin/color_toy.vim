@@ -222,7 +222,11 @@ function s:Toy.onColorScheme() dict
   " increment new color's point.
   call self.incrementPoint(self.curContext(), new_color)
 
-  echo printf("Toy.onColorScheme() called: %s -> %s", old_color, new_color)
+  redraw
+  echo printf("color switched: %s[%d] -> %s[%d]",
+        \ old_color, self.getPoint(self.curContext(), old_color),
+        \ new_color, self.getPoint(self.curContext(), new_color)
+        \ )
 endfunction
 
 function s:Toy.onVimEnter() dict
