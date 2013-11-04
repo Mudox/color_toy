@@ -296,6 +296,15 @@ function s:Toy.nextVimColor() dict "                   {{{2
   execute 'colorscheme ' . picked
 endfunction " }}}2
 
+function s:Toy.showCurColors() dict "                  {{{2
+  let msg = '[Vim] : ' . self.getCurVimColor()
+  if exists(':AirlineTheme') && len(self.lastAirlineTheme) > 0
+    let msg = msg . "\t\t[Airline] : " . self.lastAirlineTheme
+  endif
+
+  echo msg
+endfunction " }}}2
+
 " TODO: reimplement it
 function s:Toy.coloMarquee() dict "                    {{{2
   " let cur_color = g:colors_name
@@ -309,19 +318,6 @@ function s:Toy.coloMarquee() dict "                    {{{2
 
   " restore previous colorscheme.
   " execute 'colorscheme ' . cur_color
-endfunction " }}}2
-
-function s:Toy.showCurColors() dict "                  {{{2
-  let msg = '[Vim] : ' . self.getCurVimColor()
-  if exists(':AirlineTheme') && len(self.lastAirlineTheme) > 0
-    let msg = msg . "\t\t[Airline] : " . self.lastAirlineTheme
-  endif
-
-  echo msg
-endfunction " }}}2
-
-" TODO: unimplemented
-function s:Toy.airlineVirtualBoard() dict "            {{{2
 endfunction " }}}2
 
 call s:Toy.init()
