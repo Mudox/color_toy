@@ -6,7 +6,7 @@ let loaded_color_toy_plugin_color_toy = 1
 " s:Toy -- the core object                          {{{1
 
 let s:Toy = {} " local shortened alias
-let g:mdx = s:Toy   " for test
+let g:mdx_color_toy_core = s:Toy
 
 function s:Toy.init() dict "                           {{{2
   let self.fileName = expand(get(g:, "color_toy_stat_file",
