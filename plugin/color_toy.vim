@@ -1,7 +1,7 @@
-if exists("loaded_color_toy_plugin_color_toy") || &cp || version < 700
-  finish
+if exists("loaded_mdx_plugin_color_toy_vim") || &cp || version < 700
+    finish
 endif
-let loaded_color_toy_plugin_color_toy = 1
+let loaded_mdx_plugin_color_toy_vim = 1
 
 " s:Toy -- the core object                          {{{1
 
@@ -159,30 +159,33 @@ function s:cntDesc(lhs, rhs) "                         {{{2
 endfunction " }}}2
 
 function s:Toy.roll() dict "                           {{{2
-  " build virtual score board & exclud last color from it.
+  let winner = ''
   let board = self.vimColorVirtualBoard()
-  unlet board[self.lastVimColor]
 
-  " 6-3-1 scheme randomization.
-  let len        = len(board)
-  let delim_1    = float2nr(len * ( 1.0 / 10.0 ))
-  let delim_2    = float2nr(len * ( 4.0 / 10.0 ))
-  let high_queue = board[              : delim_1]
-  let mid_queue  = board[delim_1 + 1 : delim_2]
-  let low_queue  = board[delim_2 + 1 :          ]
+  while (winner == '') || (winner == self.lastVimColor)
+    " 6-3-1 scheme randomization.
+    let len        = len(board)
+    let delim_1    = float2nr(len * ( 1.0 / 10.0 ))
+    let delim_2    = float2nr(len * ( 4.0 / 10.0 ))
+    let high_queue = board[            : delim_1 ]
+    let mid_queue  = board[delim_1 + 1 : delim_2 ]
+    let low_queue  = board[delim_2 + 1 :         ]
 
-  " now let's shuffle up.
-  let dice = localtime() % 10
-  if dice < 6                 " 60% chance
-    let pool = high_queue
-  elseif dice < 9             " 30% chance
-    let pool = mid_queue
-  else                          " 10% chance
-    let pool = low_queue
-  endif
+    " now let's shuffle up.
+    let dice = localtime() % 10
+    if dice < 6                 " 60% chance
+      let pool = high_queue
+    elseif dice < 9             " 30% chance
+      let pool = mid_queue
+    else                          " 10% chance
+      let pool = low_queue
+    endif
 
-  let win_num = localtime() % len(pool)
-  return pool[win_num][0] " only return color name.
+    let win_num = localtime() % len(pool)
+    let winner = pool[win_num][0]
+  endwhile
+
+  return winner
 endfunction " }}}2
 
 function s:Toy.getScoreBoard(context) dict "           {{{2
