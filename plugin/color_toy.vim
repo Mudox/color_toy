@@ -1,3 +1,5 @@
+" vim: foldmethod=marker
+
 if exists("loaded_mdx_plugin_color_toy_vim") || &cp || version < 700
     finish
 endif
@@ -215,7 +217,10 @@ endfunction " }}}2
 
 function s:Toy.onColorScheme() dict "                  {{{2
   let new_color = self.getCurVimColor()
-  "echo self.stat_pool | " test
+  if new_color == self.lastVimColor
+    " this event maybe incured after 'syn enable'
+    return
+  endif
 
   " decrement old color's point.
   call self.decrementPoint(self.lastContext, self.lastVimColor)
@@ -295,8 +300,7 @@ function s:Toy.decrementPoint(context, name) dict "    {{{2
 endfunction " }}}2
 
 function s:Toy.nextVimColor() dict "                   {{{2
-  let picked = self.roll()
-  execute 'colorscheme ' . picked
+  execute 'colorscheme ' . self.roll()
 endfunction " }}}2
 
 function s:Toy.showCurColors() dict "                  {{{2
