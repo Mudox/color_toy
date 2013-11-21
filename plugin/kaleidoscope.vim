@@ -1,16 +1,16 @@
-if exists("loaded_color_toy_plugin_color_toy") || &cp || version < 700
-  finish
+if exists("loaded_mdx_plugin_kaleidoscope_vim") || &cp || version < 700
+    finish
 endif
-let loaded_color_toy_plugin_color_toy = 1
+let loaded_mdx_plugin_kaleidoscope_vim = 1
 
-" s:Toy -- the core object                          {{{1
+" s:core -- the core object                          {{{1
 
-let s:Toy = {} " local shortened alias
-let g:mdx = s:Toy   " for test
+let s:core = {} " local shortened alias
+let g:mdx = s:core   " for test
 
-function s:Toy.init() dict "                           {{{2
-  let self.fileName = expand(get(g:, "color_toy_stat_file",
-        \ '~/.vim_color_toy'))
+function s:core.init() dict "                           {{{2
+  let self.fileName = expand(get(g:, "kaleidoscope_stat_file",
+        \ '~/.vim_kaleidoscope'))
 
   let self.contextPattern = '^\m\C'
         \ . '\%(gui\|term\)_'
@@ -29,7 +29,7 @@ function s:Toy.init() dict "                           {{{2
   call self.incrementPoint(self.lastContext, self.lastVimColor)
 endfunction " }}}2
 
-function s:Toy.saveStat() dict "                       {{{2
+function s:core.saveStat() dict "                       {{{2
   if self.lastContext !=# self.curContext()
     call self.decrementPoint(self.lastContext, self.lastVimColor)
     call self.incrementPoint(self.curContext(), self.lastVimColor)
@@ -55,7 +55,7 @@ function s:Toy.saveStat() dict "                       {{{2
   call writefile(lines, self.fileName)
 endfunction " }}}2
 
-function s:Toy.loadStat() dict "                       {{{2
+function s:core.loadStat() dict "                       {{{2
   if filereadable(self.fileName)
     let lines = readfile(self.fileName)
 
@@ -85,14 +85,14 @@ function s:Toy.loadStat() dict "                       {{{2
   endif
 endfunction " }}}2
 
-function s:Toy.resetStat() dict "                      {{{2
-  " clear statistic file and s:Toy.stat_pool.
+function s:core.resetStat() dict "                      {{{2
+  " clear statistic file and s:core.stat_pool.
 
   call delete(self.fileName)
   call self.init()
 endfunction " }}}2
 
-function s:Toy.curContext() dict "                     {{{2
+function s:core.curContext() dict "                     {{{2
   let gui_or_term = has('gui_running') ? 'gui' : 'term'
   let light_or_dark = &background
   let filetype = len(&filetype) ? &filetype : 'untyped'
@@ -101,21 +101,21 @@ function s:Toy.curContext() dict "                     {{{2
   return join([gui_or_term, light_or_dark, filetype, 'vim'], '_')
 endfunction " }}}2
 
-function s:Toy.vimColorAvail() dict "                  {{{2
+function s:core.vimColorAvail() dict "                  {{{2
   let list = split(globpath(&rtp, 'colors/*.vim', 1), '\n')
   call map(list, 'fnamemodify(v:val, ":t:r")')
 
   return list
 endfunction " }}}2
 
-function s:Toy.airlineThemeAvail() dict "              {{{2
+function s:core.airlineThemeAvail() dict "              {{{2
   let list = split(globpath(&rtp, 'autoload/airline/themes/*.vim', 1), '\n')
   echo list
   call map(list, 'fnamemodify(v:val, ":t:r")')
   return list
 endfunction " }}}2
 
-function s:Toy.vimColorVirtualBoard() dict "           {{{2
+function s:core.vimColorVirtualBoard() dict "           {{{2
   let virtual_board = {}
   " initialize all color with 0 cnt
   for name in self.vimColorAvail()
@@ -128,7 +128,7 @@ function s:Toy.vimColorVirtualBoard() dict "           {{{2
   if len(virtual_board) <= 3
     echoerr 'Found colorscheme files: ' . join(virtual_board, ', ')
     echoerr 'Not enough colorscheme files found, need at least 4 colorscheme files.'
-    throw "mudox#color_toy: Inadequate colorscheme files"
+    throw "mudox#kaleidoscope: Inadequate colorscheme files"
   endif
 
   " merge recored scores into virtual board, for all
@@ -151,14 +151,14 @@ function s:Toy.vimColorVirtualBoard() dict "           {{{2
   return score_list
 endfunction " }}}2
 
-function s:cntDesc(lhs, rhs) "                         {{{2
-  " used by s:Toy.roll() below to sort color points records by their point in
+function s:cntDesc(lhs, rhs) "                          {{{2
+  " used by s:core.roll() below to sort color points records by their point in
   " descending order.
 
   return -(a:lhs[1] - a:rhs[1])
 endfunction " }}}2
 
-function s:Toy.roll() dict "                           {{{2
+function s:core.roll() dict "                           {{{2
   " build virtual score board & exclud last color from it.
   let board = self.vimColorVirtualBoard()
   unlet board[self.lastVimColor]
@@ -185,9 +185,9 @@ function s:Toy.roll() dict "                           {{{2
   return pool[win_num][0] " only return color name.
 endfunction " }}}2
 
-function s:Toy.getScoreBoard(context) dict "           {{{2
+function s:core.getScoreBoard(context) dict "           {{{2
   if a:context !~# self.contextPattern
-    throw 's:Toy.getScoreBoard(context) gots an invalid a:context string'
+    throw 's:core.getScoreBoard(context) gots an invalid a:context string'
   endif
 
   " if empty, initiali it to {}.
@@ -198,9 +198,9 @@ function s:Toy.getScoreBoard(context) dict "           {{{2
   return self.stat_pool[a:context]
 endfunction " }}}2
 
-function s:Toy.getPoint(context, name) dict "          {{{2
+function s:core.getPoint(context, name) dict "          {{{2
   if a:context !~# self.contextPattern
-    throw 's:Toy.getPoint(context, name) gots an invalid a:context string'
+    throw 's:core.getPoint(context, name) gots an invalid a:context string'
   endif
 
   let board = self.getScoreBoard(a:context)
@@ -210,7 +210,7 @@ function s:Toy.getPoint(context, name) dict "          {{{2
   return board[a:name]
 endfunction " }}}2
 
-function s:Toy.onColorScheme() dict "                  {{{2
+function s:core.onColorScheme() dict "                  {{{2
   let new_color = self.getCurVimColor()
   "echo self.stat_pool | " test
 
@@ -231,7 +231,7 @@ function s:Toy.onColorScheme() dict "                  {{{2
         \ )
 endfunction " }}}2
 
-function s:Toy.onVimEnter() dict "                     {{{2
+function s:core.onVimEnter() dict "                     {{{2
   call self.nextVimColor()
   " by default, vim event dost no allow nesting.
   " simulate ColorScheme that the above .nextVimColor() call would incur.
@@ -240,16 +240,16 @@ function s:Toy.onVimEnter() dict "                     {{{2
   call self.showCurColors()
 endfunction " }}}2
 
-function s:Toy.getCurVimColor() dict "                 {{{2
+function s:core.getCurVimColor() dict "                 {{{2
   if !exists('g:colors_name')
     throw 'g:colors_name not exists, syn off?'
   endif
   return g:colors_name
 endfunction " }}}2
 
-function s:Toy.setPoint(context, name, point) dict "   {{{2
+function s:core.setPoint(context, name, point) dict "   {{{2
   if a:context !~# self.contextPattern
-    throw 's:Toy.setPoint(context, name) gots an invalid a:context string'
+    throw 's:core.setPoint(context, name) gots an invalid a:context string'
   endif
 
   if empty(a:name)
@@ -260,9 +260,9 @@ function s:Toy.setPoint(context, name, point) dict "   {{{2
   let board[a:name] = a:point
 endfunction " }}}2
 
-function s:Toy.incrementPoint(context, name) dict "    {{{2
+function s:core.incrementPoint(context, name) dict "    {{{2
   if a:context !~# self.contextPattern
-    throw 's:Toy.incrementPoint(context, name) gots an invalid a:context string'
+    throw 's:core.incrementPoint(context, name) gots an invalid a:context string'
   endif
 
 
@@ -276,9 +276,9 @@ function s:Toy.incrementPoint(context, name) dict "    {{{2
         \ )
 endfunction " }}}2
 
-function s:Toy.decrementPoint(context, name) dict "    {{{2
+function s:core.decrementPoint(context, name) dict "    {{{2
   if a:context !~# self.contextPattern
-    throw 's:Toy.decrementPoint(context, name) gots an invalid a:context string'
+    throw 's:core.decrementPoint(context, name) gots an invalid a:context string'
   endif
 
   if empty(a:name)
@@ -291,12 +291,12 @@ function s:Toy.decrementPoint(context, name) dict "    {{{2
         \ )
 endfunction " }}}2
 
-function s:Toy.nextVimColor() dict "                   {{{2
+function s:core.nextVimColor() dict "                   {{{2
   let picked = self.roll()
   execute 'colorscheme ' . picked
 endfunction " }}}2
 
-function s:Toy.showCurColors() dict "                  {{{2
+function s:core.showCurColors() dict "                  {{{2
   let msg = '[Vim] : ' . self.getCurVimColor()
   if exists(':AirlineTheme') && len(self.lastAirlineTheme) > 0
     let msg = msg . "\t\t[Airline] : " . self.lastAirlineTheme
@@ -306,10 +306,10 @@ function s:Toy.showCurColors() dict "                  {{{2
 endfunction " }}}2
 
 " TODO: reimplement it
-function s:Toy.coloMarquee() dict "                    {{{2
+function s:core.coloMarquee() dict "                    {{{2
   " let cur_color = g:colors_name
 
-  " for c in s:Toy.vim_color_avail
+  " for c in s:core.vim_color_avail
   " execute "colorscheme " . c
   " redraw
   " echo c
@@ -320,29 +320,28 @@ function s:Toy.coloMarquee() dict "                    {{{2
   " execute 'colorscheme ' . cur_color
 endfunction " }}}2
 
-call s:Toy.init()
+call s:core.init()
 "}}}1
 
-" public interfaces                                 {{{1
+" public interfaces                                  {{{1
 
-function <SID>NextVimColor() "                         {{{2
-  call s:Toy.nextVimColor()
+function <SID>NextVimColor() "                          {{{2
+  call s:core.nextVimColor()
 endfunction " }}}2
 
-function <SID>ShowCurColors() "                        {{{2
-  call s:Toy.showCurColors()
+function <SID>ShowCurColors() "                         {{{2
+  call s:core.showCurColors()
 endfunction " }}}2
 
-nnoremap <Plug>(Mdx_Color_Toy_NextColor)  :<C-U>call <SID>NextVimColor()<Cr>
-nnoremap <Plug>(Mdx_Color_Toy_ShowCurColors)  :<C-U>call <SID>ShowCurColors()<Cr>
+nnoremap <Plug>(Mdx_Kaleidoscope_NextColor)     :<C-U>call <SID>NextVimColor()<Cr>
+nnoremap <Plug>(Mdx_Kaleidoscope_ShowCurColors) :<C-U>call <SID>ShowCurColors()<Cr>
 
-augroup Mdx_Color_Toy
+augroup Mdx_Kaleidoscope
   autocmd!
-  autocmd ColorScheme * call s:Toy.onColorScheme()
-  autocmd VimLeavePre * call s:Toy.saveStat()
-  autocmd VimEnter    * call s:Toy.onVimEnter()
+  autocmd ColorScheme * call s:core.onColorScheme()
+  autocmd VimLeavePre * call s:core.saveStat()
+  autocmd VimEnter    * call s:core.onVimEnter()
 augroup END
 
-command -nargs=0 ColorToyReset call s:Toy.resetStat()
-
+command -nargs=0 KaleidoscopeReset call s:core.resetStat()
 "}}}1
