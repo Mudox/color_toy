@@ -1,12 +1,14 @@
-if exists("loaded_mdx_plugin_kaleidoscope_vim") || &cp || version < 700
-    finish
+" vim: foldmethod=marker
+
+if exists("loaded_kaleidoscope_plugin_kaleidoscope") || &cp || version < 700
+  finish
 endif
-let loaded_mdx_plugin_kaleidoscope_vim = 1
+let loaded_kaleidoscope_plugin_kaleidoscope = 1
 
 " s:core -- the core object                          {{{1
 
 let s:core = {} " local shortened alias
-let g:mdx = s:core   " for test
+let g:mdx_kaleidoscope = s:core   " for test
 
 function s:core.init() dict "                           {{{2
   let self.fileName = expand(get(g:, "kaleidoscope_stat_file",
@@ -321,6 +323,7 @@ function s:core.coloMarquee() dict "                    {{{2
 endfunction " }}}2
 
 call s:core.init()
+
 "}}}1
 
 " public interfaces                                  {{{1
