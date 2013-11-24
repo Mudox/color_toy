@@ -94,6 +94,8 @@ function s:core.resetStat() dict "                      {{{2
   call self.init()
 endfunction " }}}2
 
+" return a string in the form: 'gui|term_light|dark_filetype_vim', indicating
+" current context.
 function s:core.curContext() dict "                     {{{2
   let gui_or_term = has('gui_running') ? 'gui' : 'term'
   let light_or_dark = &background
@@ -115,6 +117,12 @@ function s:core.airlineThemeAvail() dict "              {{{2
   echo list
   call map(list, 'fnamemodify(v:val, ":t:r")')
   return list
+endfunction " }}}2
+
+" return a list of (name, count) tuples, sorted by count in
+" descending order.
+function s:core.vimColorSortedBoard(context) dict "     {{{2
+  return s:dict2SortedList(self.getScoreBoard(a:context))
 endfunction " }}}2
 
 function s:core.vimColorVirtualBoard() dict "           {{{2
@@ -141,16 +149,8 @@ function s:core.vimColorVirtualBoard() dict "           {{{2
     endif
   endfor
 
-  "echo virtual_board
   " flatten the dict to a list for sorting
-  let score_list = []
-  for [name, cnt] in items(virtual_board)
-    let score_list = add(score_list, [name, cnt])
-  endfor
-
-  " sort by cnt in descending order
-  call sort(score_list, 's:cntDesc')
-  return score_list
+  return s:dict2SortedList(virtual_board)
 endfunction " }}}2
 
 function s:cntDesc(lhs, rhs) "                          {{{2
@@ -160,34 +160,43 @@ function s:cntDesc(lhs, rhs) "                          {{{2
   return -(a:lhs[1] - a:rhs[1])
 endfunction " }}}2
 
+function s:dict2SortedList(the_dict) "                  {{{2
+  " flatten the dict to a list for sorting
+  let sorted_list = []
+  for [name, cnt] in items(a:the_dict)
+    let sorted_list = add(sorted_list, [name, cnt])
+  endfor
+
+  " sort by cnt in descending order
+  call sort(sorted_list, 's:cntDesc')
+  return sorted_list
+endfunction " }}}2
+
 function s:core.roll() dict "                           {{{2
   " build virtual score board & exclud last color from it.
   let board = self.vimColorVirtualBoard()
+  unlet board[self.lastVimColor]
 
-  while (winner == '') || (winner == self.lastVimColor)
-    " 6-3-1 scheme randomization.
-    let len        = len(board)
-    let delim_1    = float2nr(len * ( 1.0 / 10.0 ))
-    let delim_2    = float2nr(len * ( 4.0 / 10.0 ))
-    let high_queue = board[            : delim_1 ]
-    let mid_queue  = board[delim_1 + 1 : delim_2 ]
-    let low_queue  = board[delim_2 + 1 :         ]
+  " 6-3-1 scheme randomization.
+  let len        = len(board)
+  let delim_1    = float2nr(len * ( 1.0 / 10.0 ))
+  let delim_2    = float2nr(len * ( 4.0 / 10.0 ))
+  let high_queue = board[              : delim_1]
+  let mid_queue  = board[delim_1 + 1 : delim_2]
+  let low_queue  = board[delim_2 + 1 :          ]
 
-    " now let's shuffle up.
-    let dice = localtime() % 10
-    if dice < 6                 " 60% chance
-      let pool = high_queue
-    elseif dice < 9             " 30% chance
-      let pool = mid_queue
-    else                          " 10% chance
-      let pool = low_queue
-    endif
+  " now let's shuffle up.
+  let dice = localtime() % 10
+  if dice < 6                 " 60% chance
+    let pool = high_queue
+  elseif dice < 9             " 30% chance
+    let pool = mid_queue
+  else                          " 10% chance
+    let pool = low_queue
+  endif
 
-    let win_num = localtime() % len(pool)
-    let winner = pool[win_num][0]
-  endwhile
-
-  return winner
+  let win_num = localtime() % len(pool)
+  return pool[win_num][0] " only return color name.
 endfunction " }}}2
 
 function s:core.getScoreBoard(context) dict "           {{{2
@@ -217,10 +226,7 @@ endfunction " }}}2
 
 function s:core.onColorScheme() dict "                  {{{2
   let new_color = self.getCurVimColor()
-  if new_color == self.lastVimColor
-    " this event maybe incured after 'syn enable'
-    return
-  endif
+  "echo self.stat_pool | " test
 
   " decrement old color's point.
   call self.decrementPoint(self.lastContext, self.lastVimColor)
@@ -342,8 +348,15 @@ function <SID>ShowCurColors() "                         {{{2
   call s:core.showCurColors()
 endfunction " }}}2
 
-nnoremap <Plug>(Mdx_Kaleidoscope_NextColor)     :<C-U>call <SID>NextVimColor()<Cr>
-nnoremap <Plug>(Mdx_Kaleidoscope_ShowCurColors) :<C-U>call <SID>ShowCurColors()<Cr>
+nnoremap <Plug>(Mdx_Kaleidoscope_NextColor)
+      \ <Esc>:call <SID>NextVimColor()<Cr>
+nnoremap <Plug>(Mdx_Kaleidoscope_ShowCurColors)
+      \ <Esc>:call <SID>ShowCurColors()<Cr>
+
+nnoremap <Plug>(Mdx_Kaleidoscope_View)
+      \ <Esc>:call mudox#kaleidoscope#view#open(s:core.curContext())<Cr>
+nnoremap <Plug>(Mdx_Kaleidoscope_View_All)
+      \ <Esc>:call mudox#kaleidoscope#view#open('all')<Cr>
 
 augroup Mdx_Kaleidoscope
   autocmd!
