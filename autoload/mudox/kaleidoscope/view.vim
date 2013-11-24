@@ -65,7 +65,10 @@ function s:core.view(context) dict "               {{{2
   endfor
 
   call append(0, content)
-  delete _
+
+  " trim leading and tailing empty lines.
+  %substitute/\m\%^\(\n\s*\)\+//e
+  %substitute/\m\(\n\s*\)\+\%$//e
 
   " finally adjust view.   {{{3
 
@@ -143,19 +146,19 @@ function s:core.textBlockAll() dict "              {{{2
   return content
 endfunction " }}}2
 
-function s:core.mappings() dict " {{{2
+function s:core.mappings() dict "                  {{{2
   nnoremap <buffer> <silent> q :close<Cr>
 endfunction " }}}2
 
-function s:core.highlights() dict " {{{2
+function s:core.highlights() dict "                {{{2
   " TODO: fill syn & hi setttings.
 endfunction " }}}2
 
 function! mudox#kaleidoscope#view#foldtext()
     let firstline = getline(v:foldstart)
-    let sub       = substitute(firstline, s:core.head_mark, '', '')
+    let body       = substitute(firstline, s:core.head_mark, '', '')
     let prefix    = s:core.head_mark_closed . ' '
-    let foldline  = prefix . sub
+    let foldline  = prefix . body
     return foldline
 endfunction
 "  }}}1
