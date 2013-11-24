@@ -74,7 +74,7 @@ function s:core.view(context) dict "               {{{2
   setlocal nomodifiable
   setlocal foldmethod=marker
   execute 'setlocal foldmarker=' . self.head_mark . ',' . self.tail_mark
-  set foldtext=s:foldtext()
+  setlocal foldtext=mudox#kaleidoscope#view#foldtext()
 
   if a:context ==# 'all'
     setlocal foldenable
@@ -151,12 +151,12 @@ function s:core.highlights() dict " {{{2
   " TODO: fill syn & hi setttings.
 endfunction " }}}2
 
-function! s:foldtext()
-    let l:firstline = getline(v:foldstart)
-    let l:sub = substitute(l:firstline, '\s*"\|"/\*\|\*/\|{\{3}.*', '', 'g')
-    let l:prefix = s:core.head_mark_closed . ' '
-    let l:foldline = l:prefix . l:sub
-    return l:foldline
+function! mudox#kaleidoscope#view#foldtext()
+    let firstline = getline(v:foldstart)
+    let sub       = substitute(firstline, s:core.head_mark, '', '')
+    let prefix    = s:core.head_mark_closed . ' '
+    let foldline  = prefix . sub
+    return foldline
 endfunction
 "  }}}1
 
