@@ -354,7 +354,7 @@ nnoremap <Plug>(Mdx_Kaleidoscope_ShowCurColors)
       \ <Esc>:call <SID>ShowCurColors()<Cr>
 
 nnoremap <Plug>(Mdx_Kaleidoscope_View)
-      \ <Esc>:call mudox#kaleidoscope#view#open(s:core.curContext())<Cr>
+      \ <Esc>:call mudox#kaleidoscope#view#open(g:mdx_kaleidoscope.curContext())<Cr>
 nnoremap <Plug>(Mdx_Kaleidoscope_View_All)
       \ <Esc>:call mudox#kaleidoscope#view#open('all')<Cr>
 
