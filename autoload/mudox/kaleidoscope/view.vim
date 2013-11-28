@@ -66,11 +66,12 @@ function s:core.view(context) dict "               {{{2
 
   call append(0, content)
 
+
+  " finally adjust view.   {{{3
+
   " trim leading and tailing empty lines.
   %substitute/\m\%^\(\n\s*\)\+//e
   %substitute/\m\(\n\s*\)\+\%$//e
-
-  " finally adjust view.   {{{3
 
   execute 'normal! ' . (win_width + 1) . "\<C-W>|"
   setlocal winfixwidth
@@ -85,7 +86,10 @@ function s:core.view(context) dict "               {{{2
     setlocal nofoldenable
   endif
 
+  " install buffer local mappings.
   call self.mappings()
+
+  call cursor(1, 1)
 
   " }}}3
 
