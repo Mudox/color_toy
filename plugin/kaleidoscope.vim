@@ -276,6 +276,12 @@ endfunction " }}}2
 
 function s:core.hate(context, name) dict              " {{{2
   call self.setPoint(a:context, a:name, 0)
+  call self.nextVimColor()
+endfunction " }}}2
+
+" reset the point of current vim color and roll to next color.
+function s:core.hateCurColor() dict                   " {{{2
+  call self.hate(self.curContext(), self.getCurVimColor())
 endfunction " }}}2
 
 function s:core.incrementPoint(context, name) dict    " {{{2
@@ -354,11 +360,16 @@ function <SID>ShowCurColors()                         " {{{2
   call s:core.showCurColors()
 endfunction " }}}2
 
+function <SID>Hate()                                  " {{{2
+  call s:core.hateCurColor()
+endfunction " }}}2
+
 nnoremap <Plug>(Mdx_Kaleidoscope_NextColor)
       \ <Esc>:call <SID>NextVimColor()<Cr>
 nnoremap <Plug>(Mdx_Kaleidoscope_ShowCurColors)
       \ <Esc>:call <SID>ShowCurColors()<Cr>
-
+nnoremap <Plug>(Mdx_Kaleidoscope_Hate)
+      \ <Esc>:call <SID>Hate()<Cr>
 nnoremap <Plug>(Mdx_Kaleidoscope_View)
       \ <Esc>:call mudox#kaleidoscope#view#open(g:mdx_kaleidoscope.curContext())<Cr>
 nnoremap <Plug>(Mdx_Kaleidoscope_View_All)
