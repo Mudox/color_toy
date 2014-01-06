@@ -10,7 +10,7 @@ let loaded_kaleidoscope_plugin_kaleidoscope = 1
 let s:core = {} " local shortened alias
 let g:mdx_kaleidoscope = s:core   " for test
 
-function s:core.init() dict "                           {{{2
+function s:core.init() dict                           " {{{2
   let self.fileName = expand(get(g:, "kaleidoscope_stat_file",
         \ '~/.vim_kaleidoscope'))
 
@@ -31,7 +31,7 @@ function s:core.init() dict "                           {{{2
   call self.incrementPoint(self.lastContext, self.lastVimColor)
 endfunction " }}}2
 
-function s:core.saveStat() dict "                       {{{2
+function s:core.saveStat() dict                       " {{{2
   if self.lastContext !=# self.curContext()
     call self.decrementPoint(self.lastContext, self.lastVimColor)
     call self.incrementPoint(self.curContext(), self.lastVimColor)
@@ -57,7 +57,7 @@ function s:core.saveStat() dict "                       {{{2
   call writefile(lines, self.fileName)
 endfunction " }}}2
 
-function s:core.loadStat() dict "                       {{{2
+function s:core.loadStat() dict                       " {{{2
   if filereadable(self.fileName)
     let lines = readfile(self.fileName)
 
@@ -87,7 +87,7 @@ function s:core.loadStat() dict "                       {{{2
   endif
 endfunction " }}}2
 
-function s:core.resetStat() dict "                      {{{2
+function s:core.resetStat() dict                      " {{{2
   " clear statistic file and s:core.stat_pool.
 
   call delete(self.fileName)
@@ -96,7 +96,7 @@ endfunction " }}}2
 
 " return a string in the form: 'gui|term_light|dark_filetype_vim', indicating
 " current context.
-function s:core.curContext() dict "                     {{{2
+function s:core.curContext() dict                     " {{{2
   let gui_or_term = has('gui_running') ? 'gui' : 'term'
   let light_or_dark = &background
   let filetype = len(&filetype) ? &filetype : 'untyped'
@@ -105,27 +105,26 @@ function s:core.curContext() dict "                     {{{2
   return join([gui_or_term, light_or_dark, filetype, 'vim'], '_')
 endfunction " }}}2
 
-function s:core.vimColorAvail() dict "                  {{{2
+function s:core.vimColorAvail() dict                  " {{{2
   let list = split(globpath(&rtp, 'colors/*.vim', 1), '\n')
   call map(list, 'fnamemodify(v:val, ":t:r")')
 
   return list
 endfunction " }}}2
 
-function s:core.airlineThemeAvail() dict "              {{{2
+function s:core.airlineThemeAvail() dict              " {{{2
   let list = split(globpath(&rtp, 'autoload/airline/themes/*.vim', 1), '\n')
   echo list
   call map(list, 'fnamemodify(v:val, ":t:r")')
   return list
 endfunction " }}}2
 
-" return a list of (name, count) tuples, sorted by count in
-" descending order.
-function s:core.vimColorSortedBoard(context) dict "     {{{2
+" return a list of (name, count) tuples, sorted by count in descending order.
+function s:core.vimColorSortedBoard(context) dict     " {{{2
   return s:dict2SortedList(self.getScoreBoard(a:context))
 endfunction " }}}2
 
-function s:core.vimColorVirtualBoard() dict "           {{{2
+function s:core.vimColorVirtualBoard() dict           " {{{2
   let virtual_board = {}
   " initialize all color with 0 cnt
   for name in self.vimColorAvail()
@@ -153,14 +152,14 @@ function s:core.vimColorVirtualBoard() dict "           {{{2
   return s:dict2SortedList(virtual_board)
 endfunction " }}}2
 
-function s:cntDesc(lhs, rhs) "                          {{{2
+function s:cntDesc(lhs, rhs)                          " {{{2
   " used by s:core.roll() below to sort color points records by their point in
   " descending order.
 
   return -(a:lhs[1] - a:rhs[1])
 endfunction " }}}2
 
-function s:dict2SortedList(the_dict) "                  {{{2
+function s:dict2SortedList(the_dict)                  " {{{2
   " flatten the dict to a list for sorting
   let sorted_list = []
   for [name, cnt] in items(a:the_dict)
@@ -172,7 +171,7 @@ function s:dict2SortedList(the_dict) "                  {{{2
   return sorted_list
 endfunction " }}}2
 
-function s:core.roll() dict "                           {{{2
+function s:core.roll() dict                           " {{{2
   " build virtual score board & exclud last color from it.
   let board = self.vimColorVirtualBoard()
   unlet board[self.lastVimColor]
@@ -199,12 +198,12 @@ function s:core.roll() dict "                           {{{2
   return pool[win_num][0] " only return color name.
 endfunction " }}}2
 
-function s:core.getScoreBoard(context) dict "           {{{2
+function s:core.getScoreBoard(context) dict           " {{{2
   if a:context !~# self.contextPattern
     throw 's:core.getScoreBoard(context) gots an invalid a:context string'
   endif
 
-  " if empty, initiali it to {}.
+  " if not exist, initiali it to {}.
   if !has_key(self.stat_pool, a:context)
     let self.stat_pool[a:context] = {}
   endif
@@ -212,19 +211,7 @@ function s:core.getScoreBoard(context) dict "           {{{2
   return self.stat_pool[a:context]
 endfunction " }}}2
 
-function s:core.getPoint(context, name) dict "          {{{2
-  if a:context !~# self.contextPattern
-    throw 's:core.getPoint(context, name) gots an invalid a:context string'
-  endif
-
-  let board = self.getScoreBoard(a:context)
-  if !has_key(board, a:name)
-    let board[a:name] = 0
-  endif
-  return board[a:name]
-endfunction " }}}2
-
-function s:core.onColorScheme() dict "                  {{{2
+function s:core.onColorScheme() dict                  " {{{2
   let new_color = self.getCurVimColor()
   "echo self.stat_pool | " test
 
@@ -245,7 +232,7 @@ function s:core.onColorScheme() dict "                  {{{2
         \ )
 endfunction " }}}2
 
-function s:core.onVimEnter() dict "                     {{{2
+function s:core.onVimEnter() dict                     " {{{2
   call self.nextVimColor()
   " by default, vim event dost no allow nesting.
   " simulate ColorScheme that the above .nextVimColor() call would incur.
@@ -254,27 +241,44 @@ function s:core.onVimEnter() dict "                     {{{2
   call self.showCurColors()
 endfunction " }}}2
 
-function s:core.getCurVimColor() dict "                 {{{2
+function s:core.getCurVimColor() dict                 " {{{2
   if !exists('g:colors_name')
     throw 'g:colors_name not exists, syn off?'
   endif
   return g:colors_name
 endfunction " }}}2
 
-function s:core.setPoint(context, name, point) dict "   {{{2
+function s:core.getPoint(context, name) dict          " {{{2
+  if a:context !~# self.contextPattern
+    throw 's:core.getPoint(context, name) gots an invalid a:context string'
+  endif
+
+  let board = self.getScoreBoard(a:context)
+  if !has_key(board, a:name)
+    let board[a:name] = 0
+  endif
+  return board[a:name]
+endfunction " }}}2
+
+function s:core.setPoint(context, name, point) dict   " {{{2
   if a:context !~# self.contextPattern
     throw 's:core.setPoint(context, name) gots an invalid a:context string'
   endif
 
   if empty(a:name)
-    echoerr 'Empty name arg for setPoint()'
+    echoerr 'Got empty name arg for s:core.setPoint()'
     return
   endif
+
   let board = self.getScoreBoard(a:context)
   let board[a:name] = a:point
 endfunction " }}}2
 
-function s:core.incrementPoint(context, name) dict "    {{{2
+function s:core.hate(context, name) dict              " {{{2
+  call self.setPoint(a:context, a:name, 0)
+endfunction " }}}2
+
+function s:core.incrementPoint(context, name) dict    " {{{2
   if a:context !~# self.contextPattern
     throw 's:core.incrementPoint(context, name) gots an invalid a:context string'
   endif
@@ -290,7 +294,7 @@ function s:core.incrementPoint(context, name) dict "    {{{2
         \ )
 endfunction " }}}2
 
-function s:core.decrementPoint(context, name) dict "    {{{2
+function s:core.decrementPoint(context, name) dict    " {{{2
   if a:context !~# self.contextPattern
     throw 's:core.decrementPoint(context, name) gots an invalid a:context string'
   endif
@@ -305,22 +309,24 @@ function s:core.decrementPoint(context, name) dict "    {{{2
         \ )
 endfunction " }}}2
 
-function s:core.nextVimColor() dict "                   {{{2
+function s:core.nextVimColor() dict                   " {{{2
   let picked = self.roll()
   execute 'colorscheme ' . picked
 endfunction " }}}2
 
-function s:core.showCurColors() dict "                  {{{2
-  let msg = '[Vim] : ' . self.getCurVimColor()
+function s:core.showCurColors() dict                  " {{{2
+  let vim_color = self.getCurVimColor()
+  let vim_color_count = self.getPoint(self.curContext(), vim_color)
+  let msg = printf("[Vim] : %s #%d", vim_color, vim_color_count)
   if exists(':AirlineTheme') && len(self.lastAirlineTheme) > 0
-    let msg = msg . "\t\t[Airline] : " . self.lastAirlineTheme
+    throw 'show s:core.showCurColors for arline not implemented yet.'
   endif
 
   echo msg
 endfunction " }}}2
 
 " TODO: reimplement it
-function s:core.coloMarquee() dict "                    {{{2
+function s:core.coloMarquee() dict                    " {{{2
   " let cur_color = g:colors_name
 
   " for c in s:core.vim_color_avail
@@ -340,11 +346,11 @@ call s:core.init()
 
 " public interfaces                                  {{{1
 
-function <SID>NextVimColor() "                          {{{2
+function <SID>NextVimColor()                          " {{{2
   call s:core.nextVimColor()
 endfunction " }}}2
 
-function <SID>ShowCurColors() "                         {{{2
+function <SID>ShowCurColors()                         " {{{2
   call s:core.showCurColors()
 endfunction " }}}2
 
