@@ -14,11 +14,16 @@ function s:core.init() dict                           " {{{2
   let self.fileName = expand(get(g:, "kaleidoscope_stat_file",
         \ '~/.vim_kaleidoscope'))
 
-  let self.contextPattern = '^\m\C'
+  let self.contextPattern = '\m\C^'
         \ . '\%(gui\|term\)_'
         \ . '\%(light\|dark\)_'
         \ . '\%(\f\+\)_'
         \ . '\%(vim\|airline\)'
+  let self.statLinePattern = '\m\C^'
+        \ . '\s*'
+        \ . '\(\d+\)'     " count
+        \ . ' -- '
+        \ . '\(\w\+\)$'    " color name
 
   let self.lastContext = self.curContext()
   let self.lastVimColor = self.getCurVimColor()
