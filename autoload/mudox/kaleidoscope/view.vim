@@ -1,12 +1,13 @@
 " vim: foldmethod=marker
-if exists("loaded_mdx_autoload_mudox_kaleidoscope_view_vim") || &cp || version < 700
+if exists("s:loaded") || &cp || version < 700
   finish
 endif
-let loaded_mdx_autoload_mudox_kaleidoscope_view_vim = 1
+let s:loaded = 1
 
 " implementation                                {{{1
 
 let s:core = g:mdx_kaleidoscope
+
 let s:core.head_mark = '▾'
 let s:core.head_mark_closed = '▸'
 let s:core.tail_mark = '+--'
@@ -106,7 +107,7 @@ function s:core.contextHead(context) dict "        {{{2
 endfunction " }}}2
 
 function s:core.statLines(context) dict "          {{{2
-  let board_list = self.vimColorSortedBoard(a:context)
+  let board_list = self.getInnerBoardSorted(a:context)
 
   " return nothing for contexts that has a emtpy record list.
   if empty(board_list)

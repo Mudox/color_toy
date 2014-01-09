@@ -21,35 +21,28 @@ function s:core.init() dict                           " {{{2
         \ . '\%(vim\|airline\)'
   let self.statLinePattern = '\m\C^'
         \ . '\s*'
-        \ . '\(\d+\)'     " count
+        \ . '\(\d+\)'      " count
         \ . ' -- '
         \ . '\(\w\+\)$'    " color name
 
-  let self.lastContext = self.curContext()
-  let self.lastVimColor = self.getCurVimColor()
+  let self.lastContext = self.getCurContext()
+  let self.lastColor = self.getCurColor()
 
-  let self.lastAirlineTheme = ''
   let self.stat_pool = {}
 
   call self.loadStat()
 
-  call self.incrementPoint(self.lastContext, self.lastVimColor)
+  call self.incrementPoint(self.lastContext, self.lastColor)
 endfunction " }}}2
 
 function s:core.saveStat() dict                       " {{{2
-  if self.lastContext !=# self.curContext()
-    call self.decrementPoint(self.lastContext, self.lastVimColor)
-    call self.incrementPoint(self.curContext(), self.lastVimColor)
+  if self.lastContext !=# self.getCurContext()
+    call self.decrementPoint(self.lastContext, self.lastColor)
+    call self.incrementPoint(self.getCurContext(), self.lastColor)
   endif
 
   let lines = []
   for [cntx, score_board] in items(self.stat_pool)
-    " skip all virtually empty items.
-    call filter(score_board, 'v:val != 0')
-    if empty(score_board)
-      continue
-    endif
-
     let line = cntx . ':'
     let list = []
     for [name, cnt] in items(score_board)
@@ -101,7 +94,7 @@ endfunction " }}}2
 
 " return a string in the form: 'gui|term_light|dark_filetype_vim', indicating
 " current context.
-function s:core.curContext() dict                     " {{{2
+function s:core.getCurContext() dict                  " {{{2
   let gui_or_term = has('gui_running') ? 'gui' : 'term'
   let light_or_dark = &background
   let filetype = len(&filetype) ? &filetype : 'untyped'
@@ -110,35 +103,30 @@ function s:core.curContext() dict                     " {{{2
   return join([gui_or_term, light_or_dark, filetype, 'vim'], '_')
 endfunction " }}}2
 
-function s:core.vimColorAvail() dict                  " {{{2
+function s:core.colorsAvail() dict                    " {{{2
   let list = split(globpath(&rtp, 'colors/*.vim', 1), '\n')
   call map(list, 'fnamemodify(v:val, ":t:r")')
 
   return list
 endfunction " }}}2
 
-function s:core.airlineThemeAvail() dict              " {{{2
-  let list = split(globpath(&rtp, 'autoload/airline/themes/*.vim', 1), '\n')
-  echo list
-  call map(list, 'fnamemodify(v:val, ":t:r")')
-  return list
+" return a list of (name, count) binary tuples, sorted by count in descending
+" order.
+function s:core.getInnerBoardSorted(context) dict     " {{{2
+  return s:dict2SortedList(self.getInnerBoard(a:context))
 endfunction " }}}2
 
-" return a list of (name, count) tuples, sorted by count in descending order.
-function s:core.vimColorSortedBoard(context) dict     " {{{2
-  return s:dict2SortedList(self.getScoreBoard(a:context))
-endfunction " }}}2
-
-function s:core.vimColorVirtualBoard() dict           " {{{2
+" raturn a list of (name, count) binary turples of all available colors.
+function s:core.getVirtualBoardSorted() dict          " {{{2
   let virtual_board = {}
   " initialize all color with 0 cnt
-  for name in self.vimColorAvail()
+  for name in self.colorsAvail()
     let virtual_board[name] = 0
   endfor
 
-  let recorded_board = self.getScoreBoard(self.curContext())
+  let recorded_board = self.getInnerBoard(self.getCurContext())
 
-  " panic and quit if not enough colorscheme are available.
+  " panic and quit if not enough colorschemes are available.
   if len(virtual_board) <= 3
     echoerr 'Found colorscheme files: ' . join(virtual_board, ', ')
     echoerr 'Not enough colorscheme files found, need at least 4 colorscheme files.'
@@ -178,8 +166,11 @@ endfunction " }}}2
 
 function s:core.roll() dict                           " {{{2
   " build virtual score board & exclud last color from it.
-  let board = self.vimColorVirtualBoard()
-  unlet board[self.lastVimColor]
+  let board = self.getVirtualBoardSorted()
+  unlet board[self.lastColor]
+
+  " exclude banned colors.
+  let board = filter(board, 'v:val[1] != -1')
 
   " 6-3-1 scheme randomization.
   let len        = len(board)
@@ -203,9 +194,9 @@ function s:core.roll() dict                           " {{{2
   return pool[win_num][0] " only return color name.
 endfunction " }}}2
 
-function s:core.getScoreBoard(context) dict           " {{{2
+function s:core.getInnerBoard(context) dict           " {{{2
   if a:context !~# self.contextPattern
-    throw 's:core.getScoreBoard(context) gots an invalid a:context string'
+    throw 's:core.getInnerBoard(context) gots an invalid a:context string'
   endif
 
   " if not exist, initiali it to {}.
@@ -216,37 +207,7 @@ function s:core.getScoreBoard(context) dict           " {{{2
   return self.stat_pool[a:context]
 endfunction " }}}2
 
-function s:core.onColorScheme() dict                  " {{{2
-  let new_color = self.getCurVimColor()
-  "echo self.stat_pool | " test
-
-  " decrement old color's point.
-  call self.decrementPoint(self.lastContext, self.lastVimColor)
-
-  let old_color = self.lastVimColor
-  let self.lastVimColor = new_color
-  let self.lastContext = self.curContext()
-
-  " increment new color's point.
-  call self.incrementPoint(self.curContext(), new_color)
-
-  redraw
-  echo printf("color switched: %s[%d] -> %s[%d]",
-        \ old_color, self.getPoint(self.curContext(), old_color),
-        \ new_color, self.getPoint(self.curContext(), new_color)
-        \ )
-endfunction " }}}2
-
-function s:core.onVimEnter() dict                     " {{{2
-  call self.nextVimColor()
-  " by default, vim event dost no allow nesting.
-  " simulate ColorScheme that the above .nextVimColor() call would incur.
-  call self.onColorScheme()
-  redraw
-  call self.showCurColors()
-endfunction " }}}2
-
-function s:core.getCurVimColor() dict                 " {{{2
+function s:core.getCurColor() dict                    " {{{2
   if !exists('g:colors_name')
     throw 'g:colors_name not exists, syn off?'
   endif
@@ -258,7 +219,7 @@ function s:core.getPoint(context, name) dict          " {{{2
     throw 's:core.getPoint(context, name) gots an invalid a:context string'
   endif
 
-  let board = self.getScoreBoard(a:context)
+  let board = self.getInnerBoard(a:context)
   if !has_key(board, a:name)
     let board[a:name] = 0
   endif
@@ -275,18 +236,18 @@ function s:core.setPoint(context, name, point) dict   " {{{2
     return
   endif
 
-  let board = self.getScoreBoard(a:context)
+  let board = self.getInnerBoard(a:context)
   let board[a:name] = a:point
 endfunction " }}}2
 
-function s:core.hate(context, name) dict              " {{{2
-  call self.setPoint(a:context, a:name, 0)
-  call self.nextVimColor()
+function s:core.banColor(context, name) dict          " {{{2
+  call self.setPoint(a:context, a:name, -1)
+  call self.colorRandom()
 endfunction " }}}2
 
 " reset the point of current vim color and roll to next color.
-function s:core.hateCurColor() dict                   " {{{2
-  call self.hate(self.curContext(), self.getCurVimColor())
+function s:core.banCurColor() dict              " {{{0
+  call self.banColor(self.getCurContext(), self.getCurColor())
 endfunction " }}}2
 
 function s:core.incrementPoint(context, name) dict    " {{{2
@@ -315,23 +276,23 @@ function s:core.decrementPoint(context, name) dict    " {{{2
     return
   endif
 
-  call self.setPoint(a:context, a:name,
-        \ max([0, self.getPoint(a:context, a:name) - 1])
-        \ )
+  let oldPnt = self.getPoint(a:context, a:name)
+  if oldPnt != -1
+    call self.setPoint(a:context, a:name,
+          \ max([0, oldPnt - 1])
+          \ )
+  endif
 endfunction " }}}2
 
-function s:core.nextVimColor() dict                   " {{{2
+function s:core.colorRandom() dict                      " {{{2
   let picked = self.roll()
   execute 'colorscheme ' . picked
 endfunction " }}}2
 
 function s:core.showCurColors() dict                  " {{{2
-  let vim_color = self.getCurVimColor()
-  let vim_color_count = self.getPoint(self.curContext(), vim_color)
+  let vim_color = self.getCurColor()
+  let vim_color_count = self.getPoint(self.getCurContext(), vim_color)
   let msg = printf("[Vim] : %s #%d", vim_color, vim_color_count)
-  if exists(':AirlineTheme') && len(self.lastAirlineTheme) > 0
-    throw 'show s:core.showCurColors for arline not implemented yet.'
-  endif
 
   echo msg
 endfunction " }}}2
@@ -351,32 +312,66 @@ function s:core.coloMarquee() dict                    " {{{2
   " execute 'colorscheme ' . cur_color
 endfunction " }}}2
 
+" autocmd callback functions.
+
+function s:core.onColorScheme() dict                  " {{{2
+  let new_color = self.getCurColor()
+  "echo self.stat_pool | " test
+
+  let old_color = self.lastColor
+  " decrement old color's point if not banned.
+  if self.getPoint(self.getCurContext(), self.lastColor) != -1
+    call self.decrementPoint(self.lastContext, self.lastColor)
+  endif
+
+  let self.lastColor = new_color
+  let self.lastContext = self.getCurContext()
+
+  " increment new color's point.
+  call self.incrementPoint(self.getCurContext(), new_color)
+
+  redraw
+  echo printf("color switched: %s[%d] -> %s[%d]",
+        \ old_color, self.getPoint(self.getCurContext(), old_color),
+        \ new_color, self.getPoint(self.getCurContext(), new_color)
+        \ )
+endfunction " }}}2
+
+function s:core.onVimEnter() dict                     " {{{2
+  call self.colorRandom()
+  " by default, vim event dost no allow nesting.
+  " simulate ColorScheme that the above .colorRandom() call would incur.
+  call self.onColorScheme()
+  redraw
+  call self.showCurColors()
+endfunction " }}}2
+
 call s:core.init()
 
 "}}}1
 
 " public interfaces                                  {{{1
 
-function <SID>NextVimColor()                          " {{{2
-  call s:core.nextVimColor()
+function <SID>NextColor()                             " {{{2
+  call s:core.colorRandom()
 endfunction " }}}2
 
 function <SID>ShowCurColors()                         " {{{2
   call s:core.showCurColors()
 endfunction " }}}2
 
-function <SID>Hate()                                  " {{{2
-  call s:core.hateCurColor()
+function <SID>Ban()                                  " {{{2
+  call s:core.banCurColor()
 endfunction " }}}2
 
 nnoremap <Plug>(Mdx_Kaleidoscope_NextColor)
-      \ <Esc>:call <SID>NextVimColor()<Cr>
+      \ <Esc>:call <SID>NextColor()<Cr>
 nnoremap <Plug>(Mdx_Kaleidoscope_ShowCurColors)
       \ <Esc>:call <SID>ShowCurColors()<Cr>
 nnoremap <Plug>(Mdx_Kaleidoscope_Hate)
-      \ <Esc>:call <SID>Hate()<Cr>
+      \ <Esc>:call <SID>Ban()<Cr>
 nnoremap <Plug>(Mdx_Kaleidoscope_View)
-      \ <Esc>:call mudox#kaleidoscope#view#open(g:mdx_kaleidoscope.curContext())<Cr>
+      \ <Esc>:call mudox#kaleidoscope#view#open(g:mdx_kaleidoscope.getCurContext())<Cr>
 nnoremap <Plug>(Mdx_Kaleidoscope_View_All)
       \ <Esc>:call mudox#kaleidoscope#view#open('all')<Cr>
 
@@ -388,4 +383,4 @@ augroup Mdx_Kaleidoscope
 augroup END
 
 command -nargs=0 KaleidoscopeReset call s:core.resetStat()
-"}}}1
+"}}}
