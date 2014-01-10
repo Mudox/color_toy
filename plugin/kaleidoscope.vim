@@ -1,9 +1,9 @@
 " vim: foldmethod=marker
 
-if exists("loaded_kaleidoscope_plugin_kaleidoscope") || &cp || version < 700
+if exists("s:loaded") || &cp || version < 700
   finish
 endif
-let loaded_kaleidoscope_plugin_kaleidoscope = 1
+let s:loaded = 1
 
 " s:core -- the core object                          {{{1
 
@@ -92,7 +92,7 @@ function s:core.resetStat() dict                      " {{{2
   call self.init()
 endfunction " }}}2
 
-" return a string in the form: 'gui|term_light|dark_filetype_vim', indicating
+" return a string in the form: '[gui|term]_filetype', indicating
 " current context.
 function s:core.getCurContext() dict                  " {{{2
   let gui_or_term = has('gui_running') ? 'gui' : 'term'
@@ -167,10 +167,18 @@ endfunction " }}}2
 function s:core.roll() dict                           " {{{2
   " build virtual score board & exclud last color from it.
   let board = self.getVirtualBoardSorted()
-  unlet board[self.lastColor]
+
+  " exclud current (old) color.
+  let board = filter(board, 'v:val[0] != "' . self.lastColor . '"')
 
   " exclude banned colors.
-  let board = filter(board, 'v:val[1] != -1')
+  let board = filter(board, 'v:val[1] >= 0')
+  " test
+  for x in board
+    if x[1] < 0
+      echo x
+    endif
+  endfor
 
   " 6-3-1 scheme randomization.
   let len        = len(board)
@@ -186,7 +194,7 @@ function s:core.roll() dict                           " {{{2
     let pool = high_queue
   elseif dice < 9             " 30% chance
     let pool = mid_queue
-  else                          " 10% chance
+  else                        " 10% chance
     let pool = low_queue
   endif
 
@@ -290,9 +298,13 @@ function s:core.colorRandom() dict                      " {{{2
 endfunction " }}}2
 
 function s:core.showCurColors() dict                  " {{{2
-  let vim_color = self.getCurColor()
-  let vim_color_count = self.getPoint(self.getCurContext(), vim_color)
-  let msg = printf("[Vim] : %s #%d", vim_color, vim_color_count)
+  " make sure current color in current context gain at least 1 point.
+  let name           = self.getCurColor()
+  let context        = self.getCurContext()
+  let points         = self.getPoint(context, name)
+  let context_string = substitute(context, '_', ' | ', 'g')
+  let msg            = printf("[Vim] : %s #%d in [%s]",
+        \ name, points, context_string)
 
   echo msg
 endfunction " }}}2
@@ -320,7 +332,7 @@ function s:core.onColorScheme() dict                  " {{{2
 
   let old_color = self.lastColor
   " decrement old color's point if not banned.
-  if self.getPoint(self.getCurContext(), self.lastColor) != -1
+  if self.getPoint(self.getCurContext(), self.lastColor) > 1
     call self.decrementPoint(self.lastContext, self.lastColor)
   endif
 
@@ -344,6 +356,15 @@ function s:core.onVimEnter() dict                     " {{{2
   call self.onColorScheme()
   redraw
   call self.showCurColors()
+endfunction " }}}2
+
+function s:core.onVimLeavePre() dict                     " {{{2
+  " make sure current color in current context gain at least 1 point.
+  let name    = self.getCurColor()
+  let context = self.getCurContext()
+  let points  = self.getPoint(self.getCurContext(), name)
+  call self.setPoint(context, name, max([1, points]))
+  call self.saveStat()
 endfunction " }}}2
 
 call s:core.init()
@@ -378,7 +399,7 @@ nnoremap <Plug>(Mdx_Kaleidoscope_View_All)
 augroup Mdx_Kaleidoscope
   autocmd!
   autocmd ColorScheme * call s:core.onColorScheme()
-  autocmd VimLeavePre * call s:core.saveStat()
+  autocmd VimLeavePre * call s:core.onVimLeavePre()
   autocmd VimEnter    * call s:core.onVimEnter()
 augroup END
 
