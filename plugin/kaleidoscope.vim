@@ -13,6 +13,8 @@ let g:mdx_kaleidoscope = s:core   " for test
 function s:core.init() dict                           " {{{2
   let self.fileName = expand(get(g:, "kaleidoscope_stat_file",
         \ '~/.vim_kaleidoscope'))
+  let self.background = expand(get(g:, "kaleidoscope_backgroud",
+        \ 'dark'))
 
   let self.contextPattern = '\m\C^'
         \ . '\%(gui\|term\)_'
@@ -34,11 +36,6 @@ function s:core.init() dict                           " {{{2
 endfunction " }}}2
 
 function s:core.saveStat() dict                       " {{{2
-  if self.lastContext !=# self.getCurContext()
-    call self.decrementPoint(self.lastContext, self.lastColor)
-    call self.incrementPoint(self.getCurContext(), self.lastColor)
-  endif
-
   let lines = []
   for [cntx, score_board] in items(self.stat_pool)
     let line = cntx . ':'
@@ -199,9 +196,12 @@ function s:core.roll() dict                           " {{{2
 endfunction " }}}2
 
 function s:core.getInnerBoard(context) dict           " {{{2
+  " arguemnts check
   if a:context !~# self.contextPattern
     throw 's:core.getInnerBoard(context) gots an invalid a:context string'
   endif
+
+  call self.loadStat()
 
   " if not exist, initiali it to {}.
   if !has_key(self.stat_pool, a:context)
@@ -223,6 +223,8 @@ function s:core.getPoint(context, name) dict          " {{{2
     throw 's:core.getPoint(context, name) gots an invalid a:context string'
   endif
 
+  call self.loadStat()
+
   let board = self.getInnerBoard(a:context)
   if !has_key(board, a:name)
     let board[a:name] = 0
@@ -231,6 +233,7 @@ function s:core.getPoint(context, name) dict          " {{{2
 endfunction " }}}2
 
 function s:core.setPoint(context, name, point) dict   " {{{2
+  " arguments check
   if a:context !~# self.contextPattern
     throw 's:core.setPoint(context, name) gots an invalid a:context string'
   endif
@@ -240,34 +243,50 @@ function s:core.setPoint(context, name, point) dict   " {{{2
     return
   endif
 
+  if a:0 != 1 && a:0 != 0
+    echo a:0
+    echoerr 'Invalid number of unnamed arguments given to s:core.setPoint()'
+    return
+  elseif a:0 == 1 && a:1 !=# 'nosave'
+    echoerr 'Invalid unnamed argumetn for s:core.setPoint(), needs "nosave"'
+    return
+  endif
+
+
   let board = self.getInnerBoard(a:context)
   let board[a:name] = a:point
+
+  call self.saveStat()
 endfunction " }}}2
 
 function s:core.banColor(context, name) dict          " {{{2
   call self.setPoint(a:context, a:name, -1)
-  call self.colorRandom()
 endfunction " }}}2
 
 " reset the point of current vim color and roll to next color.
-function s:core.banCurColor() dict              " {{{0
+function s:core.banCurColor() dict              " {{{2
   call self.banColor(self.getCurContext(), self.getCurColor())
+  call self.colorRandom()
 endfunction " }}}2
 
 function s:core.incrementPoint(context, name) dict    " {{{2
+  " arguments check
   if a:context !~# self.contextPattern
     throw 's:core.incrementPoint(context, name) gots an invalid a:context string'
   endif
-
 
   if empty(a:name)
     echoerr 'Empty name arg for incrementPoint()'
     return
   endif
 
-  call self.setPoint(a:context, a:name,
-        \ max([0, self.getPoint(a:context, a:name) + 1])
-        \ )
+  let oldPnt = self.getPoint(a:context, a:name)
+  if oldPnt != -1
+    call self.setPoint(a:context, a:name, oldPnt + 1)
+  else
+    echo printf("color [%s] is already banned in context [%s].",
+          \ a:name, a:context)
+  endif
 endfunction " }}}2
 
 function s:core.decrementPoint(context, name) dict    " {{{2
@@ -281,10 +300,11 @@ function s:core.decrementPoint(context, name) dict    " {{{2
   endif
 
   let oldPnt = self.getPoint(a:context, a:name)
-  if oldPnt != -1
-    call self.setPoint(a:context, a:name,
-          \ max([0, oldPnt - 1])
-          \ )
+  if oldPnt > 0
+    call self.setPoint(a:context, a:name, oldPnt - 1)
+  else
+    echo printf("the count of color [%s] is already 0 in context [%s]",
+          \ a:name, a:context)
   endif
 endfunction " }}}2
 
@@ -324,19 +344,16 @@ endfunction " }}}2
 
 function s:core.onColorScheme() dict                  " {{{2
   let new_color = self.getCurColor()
-  "echo self.stat_pool | " test
-
   let old_color = self.lastColor
-  " decrement old color's point if not banned.
-  if self.getPoint(self.getCurContext(), self.lastColor) > 1
-    call self.decrementPoint(self.lastContext, self.lastColor)
-  endif
+
+  call self.decrementPoint(self.lastContext, self.lastColor)
 
   let self.lastColor = new_color
   let self.lastContext = self.getCurContext()
 
-  " increment new color's point.
-  call self.incrementPoint(self.getCurContext(), new_color)
+  call self.incrementPoint(self.lastContext, self.lastColor)
+
+  let &background = self.background
 
   redraw
   echo printf("color switched: %s[%d] -> %s[%d]",
@@ -355,12 +372,10 @@ function s:core.onVimEnter() dict                     " {{{2
 endfunction " }}}2
 
 function s:core.onVimLeavePre() dict                     " {{{2
-  " make sure current color in current context gain at least 1 point.
-  let name    = self.getCurColor()
-  let context = self.getCurContext()
-  let points  = self.getPoint(self.getCurContext(), name)
-  call self.setPoint(context, name, max([1, points]))
-  call self.saveStat()
+  if self.lastContext !=# self.getCurContext()
+    call self.decrementPoint(self.lastContext, self.lastColor)
+    call self.incrementPoint(self.getCurContext(), self.lastColor)
+  endif
 endfunction " }}}2
 
 call s:core.init()
