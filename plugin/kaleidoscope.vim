@@ -212,10 +212,7 @@ function s:core.getInnerBoard(context) dict           " {{{2
 endfunction " }}}2
 
 function s:core.getCurColor() dict                    " {{{2
-  if !exists('g:colors_name')
-    throw 'g:colors_name not exists, syn off?'
-  endif
-  return g:colors_name
+  return exists('g:colors_name') ? g:colors_name : 'default'
 endfunction " }}}2
 
 function s:core.getPoint(context, name) dict          " {{{2
