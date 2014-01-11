@@ -16,9 +16,7 @@ function s:core.init() dict                           " {{{2
 
   let self.contextPattern = '\m\C^'
         \ . '\%(gui\|term\)_'
-        \ . '\%(light\|dark\)_'
-        \ . '\%(\f\+\)_'
-        \ . '\%(vim\|airline\)'
+        \ . '\%(\f\+\)'
   let self.statLinePattern = '\m\C^'
         \ . '\s*'
         \ . '\(\d+\)'      " count
@@ -78,7 +76,7 @@ function s:core.loadStat() dict                       " {{{2
         if cnt !~ '\m[0-9]\+'
           echoerr 'Invalid count string in ' . expand(self.fileName)
         endif
-        let cnt = str2nr(cnt) " return 0 in case a invalid string.
+        let cnt = str2nr(cnt) " will return 0 in case a invalid string.
         let self.stat_pool[cntx][name] = cnt
       endfor
     endfor
@@ -92,15 +90,13 @@ function s:core.resetStat() dict                      " {{{2
   call self.init()
 endfunction " }}}2
 
-" return a string in the form: '[gui|term]_filetype', indicating
-" current context.
+" return a string in the form: '[gui|term]_<filetype>', indicating current
+" context.
 function s:core.getCurContext() dict                  " {{{2
   let gui_or_term = has('gui_running') ? 'gui' : 'term'
-  let light_or_dark = &background
-  let filetype = len(&filetype) ? &filetype : 'untyped'
+  let file_type = len(&filetype) ? &filetype : 'untyped'
 
-  " TODO: currently only implement vim part, left airline part for next time.
-  return join([gui_or_term, light_or_dark, filetype, 'vim'], '_')
+  return gui_or_term . '_' . file_type
 endfunction " }}}2
 
 function s:core.colorsAvail() dict                    " {{{2

@@ -13,12 +13,12 @@ let s:core.head_mark_closed = '▸'
 let s:core.tail_mark = '+--'
 let s:buf_nr = -1
 
-function s:cntDesc(lhs, rhs) "                     {{{2
+function s:cntDesc(lhs, rhs)                     " {{{2
   return -(a:lhs[1] - a:rhs[1])
 endfunction " }}}2
 
-function s:core.view(context) dict "               {{{2
-  " creat view.            {{{3
+function s:core.view(context) dict               " {{{2
+  " creat view.              {{{3
 
   " no buffer named [Kaleidoscope] exists.
   if !bufexists(s:buf_nr)
@@ -68,7 +68,7 @@ function s:core.view(context) dict "               {{{2
   call append(0, content)
 
 
-  " finally adjust view.   {{{3
+  " finally adjust view.     {{{3
 
   " trim leading and tailing empty lines.
   %substitute/\m\%^\(\n\s*\)\+//e
@@ -96,17 +96,17 @@ function s:core.view(context) dict "               {{{2
 
 endfunction " }}}2
 
-function s:core.contextHead(context) dict "        {{{2
-  let [gui_or_term, light_or_dark, filetype_or_untyped; ignore],
+function s:core.contextHead(context) dict        " {{{2
+  let [gui_or_term,filetype_or_untyped],
         \ = split(a:context, '_')
 
-  let line = printf("%s %-4s | bg: %5s | ft: %s",
-        \ s:core.head_mark, gui_or_term, light_or_dark, filetype_or_untyped)
+  let line = printf("%s %-4s | ft: %s",
+        \ s:core.head_mark, gui_or_term, filetype_or_untyped)
 
   return line
 endfunction " }}}2
 
-function s:core.statLines(context) dict "          {{{2
+function s:core.statLines(context) dict          " {{{2
   let board_list = self.getInnerBoardSorted(a:context)
 
   " return nothing for contexts that has a emtpy record list.
@@ -116,6 +116,7 @@ function s:core.statLines(context) dict "          {{{2
 
   " column width for printing.
   let len_count = len(string(board_list[0][1]))
+  let len_count = max([2, len_count])
 
   let record_strings = []
   for [name, cnt] in board_list
@@ -126,7 +127,7 @@ function s:core.statLines(context) dict "          {{{2
   return record_strings
 endfunction " }}}2
 
-function s:core.textBlockOf(context) dict "        {{{2
+function s:core.textBlockOf(context) dict        " {{{2
   let context_head = self.contextHead(a:context)
   let statLines = self.statLines(a:context)
   let tail = printf('%s Totally %d colors.', self.tail_mark, len(statLines))
@@ -141,7 +142,7 @@ function s:core.textBlockOf(context) dict "        {{{2
   return content
 endfunction " }}}2
 
-function s:core.textBlockAll() dict "              {{{2
+function s:core.textBlockAll() dict              " {{{2
   let content = []
   for context in keys(self.stat_pool)
     call extend(content, self.textBlockOf(context))
@@ -151,11 +152,11 @@ function s:core.textBlockAll() dict "              {{{2
   return content
 endfunction " }}}2
 
-function s:core.mappings() dict "                  {{{2
+function s:core.mappings() dict                  " {{{2
   nnoremap <buffer> <silent> q :close<Cr>
 endfunction " }}}2
 
-function s:core.highlights() dict "                {{{2
+function s:core.highlights() dict                " {{{2
   " TODO: fill syn & hi setttings.
 endfunction " }}}2
 
@@ -170,7 +171,7 @@ endfunction
 
 " public interface                              {{{1
 
-function mudox#kaleidoscope#view#open(context) "   {{{2
+function mudox#kaleidoscope#view#open(context)   " {{{2
   call s:core.view(a:context)
 endfunction " }}}2
 
