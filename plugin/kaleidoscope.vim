@@ -162,16 +162,13 @@ function s:core.roll() dict                           " {{{2
   let board = self.getVirtualBoardSorted()
 
   " exclud current (old) color.
-  let board = filter(board, 'v:val[0] != "' . self.lastColor . '"')
+  call filter(board, 'v:val[0] != "' . self.lastColor . '"')
 
   " exclude banned colors.
-  let board = filter(board, 'v:val[1] >= 0')
-  " test
-  for x in board
-    if x[1] < 0
-      echo x
-    endif
-  endfor
+  call filter(board, 'v:val[1] >= 0')
+
+  let xlst =  map(copy(board), 'string(v:val)')
+  call writefile(xlst, '/tmp/xlst')
 
   " 6-3-1 scheme randomization.
   let len        = len(board)
