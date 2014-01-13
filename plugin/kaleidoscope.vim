@@ -255,7 +255,7 @@ function s:core.banColor(context, name) dict          " {{{2
 endfunction " }}}2
 
 " reset the point of current vim color and roll to next color.
-function s:core.banCurColor() dict              " {{{2
+function s:core.banCurColor() dict                    " {{{2
   call self.banColor(self.getCurContext(), self.getCurColor())
   call self.colorRandom()
 endfunction " }}}2
@@ -299,7 +299,7 @@ function s:core.decrementPoint(context, name) dict    " {{{2
   endif
 endfunction " }}}2
 
-function s:core.colorRandom() dict                      " {{{2
+function s:core.colorRandom() dict                    " {{{2
   let picked = self.roll()
   execute 'colorscheme ' . picked
 endfunction " }}}2
@@ -314,6 +314,17 @@ function s:core.showCurColors() dict                  " {{{2
         \ name, points, context_string)
 
   echo msg
+endfunction " }}}2
+
+function s:core.editColorFile(name)                       " {{{2
+  let paths = split(globpath(&rtp, printf('colors/%s.vim', a:name), 1), "\n")
+  if len(paths) == 0
+    throw printf('color file [%s] not found in &rtp.', a:name)
+  elseif len(paths) != 1
+    echo printf("found multiple files: %s.\neidt the first one.", paths)
+  endif
+  echo paths[0]
+  call mudox#query_open_file#New(paths[0])
 endfunction " }}}2
 
 " TODO: reimplement it
@@ -362,7 +373,7 @@ function s:core.onVimEnter() dict                     " {{{2
   call self.showCurColors()
 endfunction " }}}2
 
-function s:core.onVimLeavePre() dict                     " {{{2
+function s:core.onVimLeavePre() dict                  " {{{2
   if self.lastContext !=# self.getCurContext()
     call self.decrementPoint(self.lastContext, self.lastColor)
     call self.incrementPoint(self.getCurContext(), self.lastColor)
@@ -383,8 +394,13 @@ function <SID>ShowCurColors()                         " {{{2
   call s:core.showCurColors()
 endfunction " }}}2
 
-function <SID>Ban()                                  " {{{2
+function <SID>Ban()                                   " {{{2
   call s:core.banCurColor()
+endfunction " }}}2
+
+function <SID>EditCurrentColor()                      " {{{2
+  let name = s:core.getCurColor()
+  call s:core.editColorFile(name)
 endfunction " }}}2
 
 nnoremap <Plug>(Mdx_Kaleidoscope_NextColor)
@@ -397,6 +413,8 @@ nnoremap <Plug>(Mdx_Kaleidoscope_View)
       \ <Esc>:call mudox#kaleidoscope#view#open(g:mdx_kaleidoscope.getCurContext())<Cr>
 nnoremap <Plug>(Mdx_Kaleidoscope_View_All)
       \ <Esc>:call mudox#kaleidoscope#view#open('all')<Cr>
+nnoremap <Plug>(Mdx_Kaleidoscope_Edit_Current_Color)
+      \ <Esc>:call <SID>EditCurrentColor()<Cr>
 
 augroup Mdx_Kaleidoscope
   autocmd!
