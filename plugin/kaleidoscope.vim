@@ -167,9 +167,6 @@ function s:core.roll() dict                           " {{{2
   " exclude banned colors.
   call filter(board, 'v:val[1] >= 0')
 
-  let xlst =  map(copy(board), 'string(v:val)')
-  call writefile(xlst, '/tmp/xlst')
-
   " 6-3-1 scheme randomization.
   let len        = len(board)
   let delim_1    = float2nr(len * ( 1.0 / 10.0 ))

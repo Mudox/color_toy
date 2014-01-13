@@ -97,7 +97,7 @@ function s:core.view(context) dict               " {{{2
 endfunction " }}}2
 
 function s:core.contextHead(context) dict        " {{{2
-  let [gui_or_term,filetype_or_untyped],
+  let [gui_or_term, filetype_or_untyped],
         \ = split(a:context, '_')
 
   let line = printf("%s %-4s | ft: %s",
