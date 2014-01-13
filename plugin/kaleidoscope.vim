@@ -323,7 +323,7 @@ function s:core.editColorFile(name)                       " {{{2
   elseif len(paths) != 1
     echo printf("found multiple files: %s.\neidt the first one.", paths)
   endif
-  echo paths[0]
+
   call mudox#query_open_file#New(paths[0])
 endfunction " }}}2
 
