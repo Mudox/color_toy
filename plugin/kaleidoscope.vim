@@ -321,7 +321,7 @@ function s:core.editColorFile(name)                       " {{{2
   if len(paths) == 0
     throw printf('color file [%s] not found in &rtp.', a:name)
   elseif len(paths) != 1
-    echo printf("found multiple files: %s.\neidt the first one.", paths)
+    echo printf("found multiple files: %s.\nedit the first one.", paths)
   endif
 
   call mudox#query_open_file#New(paths[0])
