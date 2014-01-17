@@ -316,7 +316,7 @@ function s:core.showCurColors() dict                  " {{{2
   echo msg
 endfunction " }}}2
 
-function s:core.editColorFile(name)                       " {{{2
+function s:core.editColorFile(name)                   " {{{2
   let paths = split(globpath(&rtp, printf('colors/%s.vim', a:name), 1), "\n")
   if len(paths) == 0
     throw printf('color file [%s] not found in &rtp.', a:name)
@@ -399,8 +399,12 @@ function <SID>Ban()                                   " {{{2
 endfunction " }}}2
 
 function <SID>EditCurrentColor()                      " {{{2
-  let name = s:core.getCurColor()
-  call s:core.editColorFile(name)
+  try
+    let name = s:core.getCurColor()
+    call s:core.editColorFile(name)
+  catch /^mudox#query_open_file: Canceled$/
+    echohl WarningMsg | echo '* EditCurrentColor: Canceled *' | echohl None
+  endtry
 endfunction " }}}2
 
 nnoremap <Plug>(Mdx_Kaleidoscope_NextColor)
