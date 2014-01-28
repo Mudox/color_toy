@@ -40,9 +40,15 @@ function s:core.saveStat() dict                       " {{{2
   for [cntx, score_board] in items(self.stat_pool)
     let line = cntx . ':'
     let list = []
+
+    if len(score_board) == 0
+      continue
+    endif
+
     for [name, cnt] in items(score_board)
       let list = add(list, name . '#' . cnt)
     endfor
+
     let line = line . join(list, ',')
     let lines = add(lines, line)
   endfor
@@ -64,6 +70,11 @@ function s:core.loadStat() dict                       " {{{2
 
     for line in lines
       let cntx_and_score_board = split(line, ':')
+
+      if len(cntx_and_score_board) != 2
+        continue
+      endif
+
       let cntx = cntx_and_score_board[0]
       let score_board = split(cntx_and_score_board[1], ',')
 
@@ -161,7 +172,7 @@ function s:core.roll() dict                           " {{{2
   " build virtual score board & exclud last color from it.
   let board = self.getVirtualBoardSorted()
 
-  " exclud current (old) color.
+  " exclude current (old) color.
   call filter(board, 'v:val[0] != "' . self.lastColor . '"')
 
   " exclude banned colors.
@@ -172,8 +183,8 @@ function s:core.roll() dict                           " {{{2
   let delim_1    = float2nr(len * ( 1.0 / 10.0 ))
   let delim_2    = float2nr(len * ( 4.0 / 10.0 ))
   let high_queue = board[              : delim_1]
-  let mid_queue  = board[delim_1 + 1 : delim_2]
-  let low_queue  = board[delim_2 + 1 :          ]
+  let mid_queue  = board[delim_1 + 1   : delim_2]
+  let low_queue  = board[delim_2 + 1   :        ]
 
   " now let's shuffle up.
   let dice = localtime() % 10
@@ -195,6 +206,7 @@ function s:core.getInnerBoard(context) dict           " {{{2
     throw 's:core.getInnerBoard(context) gots an invalid a:context string'
   endif
 
+  " sync from disk.
   call self.loadStat()
 
   " if not exist, initiali it to {}.
@@ -213,8 +225,6 @@ function s:core.getPoint(context, name) dict          " {{{2
   if a:context !~# self.contextPattern
     throw 's:core.getPoint(context, name) gots an invalid a:context string'
   endif
-
-  call self.loadStat()
 
   let board = self.getInnerBoard(a:context)
   if !has_key(board, a:name)
