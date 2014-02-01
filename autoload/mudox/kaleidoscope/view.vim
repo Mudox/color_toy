@@ -157,15 +157,15 @@ function s:core.mappings() dict                  " {{{2
 endfunction " }}}2
 
 function s:core.highlights() dict                " {{{2
-  " TODO: fill syn & hi setttings.
+  syntax clear
 endfunction " }}}2
 
 function! mudox#kaleidoscope#view#foldtext()
-    let firstline = getline(v:foldstart)
-    let body       = substitute(firstline, s:core.head_mark, '', '')
-    let prefix    = s:core.head_mark_closed . ' '
-    let foldline  = prefix . body
-    return foldline
+  let firstline = getline(v:foldstart)
+  let body       = substitute(firstline, s:core.head_mark, '', '')
+  let prefix    = s:core.head_mark_closed . ' '
+  let foldline  = prefix . body
+  return foldline
 endfunction
 "  }}}1
 

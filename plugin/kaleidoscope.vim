@@ -1,11 +1,13 @@
 " vim: foldmethod=marker
 
+" GUARD {{{1
 if exists("s:loaded") || &cp || version < 700
   finish
 endif
 let s:loaded = 1
+" }}}1
 
-" s:core -- the core object                          {{{1
+" S:CORE -- THE CORE OBJECT                          {{{1
 
 let s:core = {} " local shortened alias
 let g:mdx_kaleidoscope = s:core   " for test
@@ -394,7 +396,7 @@ call s:core.init()
 
 "}}}1
 
-" public interfaces                                  {{{1
+" PUBLIC INTERFACES                                  {{{1
 
 function <SID>NextColor()                             " {{{2
   call s:core.colorRandom()
