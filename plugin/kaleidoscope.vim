@@ -381,6 +381,11 @@ function s:core.onVimEnter() dict                     " {{{2
   " by default, vim event dost no allow nesting.
   " simulate ColorScheme that the above .colorRandom() call would incur.
   call self.onColorScheme()
+  
+  if exists(':AirlineTheme')
+    AirlineTheme ubaryd
+  endif
+
   redraw
   call self.showCurColors()
 endfunction " }}}2
