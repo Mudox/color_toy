@@ -8,8 +8,8 @@ let s:loaded = 1
 
 let s:core = g:mdx_kaleidoscope
 
-let s:core.head_mark = '▾'
-let s:core.head_mark_closed = '▸'
+let s:core.head_mark = '>'
+let s:core.head_mark_closed = '-'
 let s:core.tail_mark = '+--'
 let s:buf_nr = -1
 
