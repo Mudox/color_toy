@@ -1,18 +1,18 @@
 " vim: foldmethod=marker
 
-" GUARD {{{1
+" GUARD                                                                                {{{1
 if exists("s:loaded") || &cp || version < 700
   finish
 endif
 let s:loaded = 1
 " }}}1
 
-" S:CORE -- THE CORE OBJECT                          {{{1
+" S:CORE -- THE CORE OBJECT                                                            {{{1
 
 let s:core = {} " local shortened alias
 let g:mdx_kaleidoscope = s:core   " for test
 
-function s:core.init() dict                           " {{{2
+function s:core.init() dict                                                             " {{{2
   let self.fileName = expand(get(g:, "kaleidoscope_stat_file",
         \ '~/.vim_kaleidoscope'))
   let self.background = expand(get(g:, "kaleidoscope_backgroud",
@@ -37,7 +37,7 @@ function s:core.init() dict                           " {{{2
   call self.incrementPoint(self.lastContext, self.lastColor)
 endfunction " }}}2
 
-function s:core.saveStat() dict                       " {{{2
+function s:core.saveStat() dict                                                         " {{{2
   let lines = []
   for [cntx, score_board] in items(self.stat_pool)
     let line = cntx . ':'
@@ -58,7 +58,7 @@ function s:core.saveStat() dict                       " {{{2
   call writefile(lines, self.fileName)
 endfunction " }}}2
 
-function s:core.loadStat() dict                       " {{{2
+function s:core.loadStat() dict                                                         " {{{2
   if filereadable(self.fileName)
     let lines = readfile(self.fileName)
 
@@ -93,7 +93,7 @@ function s:core.loadStat() dict                       " {{{2
   endif
 endfunction " }}}2
 
-function s:core.resetStat() dict                      " {{{2
+function s:core.resetStat() dict                                                        " {{{2
   " clear statistic file and s:core.stat_pool.
 
   call delete(self.fileName)
@@ -102,14 +102,14 @@ endfunction " }}}2
 
 " return a string in the form: '[gui|term]_<filetype>', indicating current
 " context.
-function s:core.getCurContext() dict                  " {{{2
+function s:core.getCurContext() dict                                                    " {{{2
   let gui_or_term = has('gui_running') ? 'gui' : 'term'
   let file_type = len(&filetype) ? &filetype : 'untyped'
 
   return gui_or_term . '_' . file_type
 endfunction " }}}2
 
-function s:core.colorsAvail() dict                    " {{{2
+function s:core.colorsAvail() dict                                                      " {{{2
   let list = split(globpath(&rtp, 'colors/*.vim', 1), '\n')
   call map(list, 'fnamemodify(v:val, ":t:r")')
 
@@ -118,12 +118,12 @@ endfunction " }}}2
 
 " return a list of (name, count) binary tuples, sorted by count in descending
 " order.
-function s:core.getInnerBoardSorted(context) dict     " {{{2
+function s:core.getInnerBoardSorted(context) dict                                       " {{{2
   return s:dict2SortedList(self.getInnerBoard(a:context))
 endfunction " }}}2
 
 " raturn a list of (name, count) binary turples of all available colors.
-function s:core.getVirtualBoardSorted() dict          " {{{2
+function s:core.getVirtualBoardSorted() dict                                            " {{{2
   let virtual_board = {}
   " initialize all color with 0 cnt
   for name in self.colorsAvail()
@@ -151,14 +151,14 @@ function s:core.getVirtualBoardSorted() dict          " {{{2
   return s:dict2SortedList(virtual_board)
 endfunction " }}}2
 
-function s:cntDesc(lhs, rhs)                          " {{{2
+function s:cntDesc(lhs, rhs)                                                            " {{{2
   " used by s:core.roll() below to sort color points records by their point in
   " descending order.
 
   return -(a:lhs[1] - a:rhs[1])
 endfunction " }}}2
 
-function s:dict2SortedList(the_dict)                  " {{{2
+function s:dict2SortedList(the_dict)                                                    " {{{2
   " flatten the dict to a list for sorting
   let sorted_list = []
   for [name, cnt] in items(a:the_dict)
@@ -170,7 +170,7 @@ function s:dict2SortedList(the_dict)                  " {{{2
   return sorted_list
 endfunction " }}}2
 
-function s:core.roll() dict                           " {{{2
+function s:core.roll() dict                                                             " {{{2
   " build virtual score board & exclud last color from it.
   let board = self.getVirtualBoardSorted()
 
@@ -202,7 +202,7 @@ function s:core.roll() dict                           " {{{2
   return pool[win_num][0] " only return color name.
 endfunction " }}}2
 
-function s:core.getInnerBoard(context) dict           " {{{2
+function s:core.getInnerBoard(context) dict                                             " {{{2
   " arguemnts check
   if a:context !~# self.contextPattern
     throw 's:core.getInnerBoard(context) gots an invalid a:context string'
@@ -219,11 +219,11 @@ function s:core.getInnerBoard(context) dict           " {{{2
   return self.stat_pool[a:context]
 endfunction " }}}2
 
-function s:core.getCurColor() dict                    " {{{2
+function s:core.getCurColor() dict                                                      " {{{2
   return exists('g:colors_name') ? g:colors_name : 'default'
 endfunction " }}}2
 
-function s:core.getPoint(context, name) dict          " {{{2
+function s:core.getPoint(context, name) dict                                            " {{{2
   if a:context !~# self.contextPattern
     throw 's:core.getPoint(context, name) gots an invalid a:context string'
   endif
@@ -235,7 +235,7 @@ function s:core.getPoint(context, name) dict          " {{{2
   return board[a:name]
 endfunction " }}}2
 
-function s:core.setPoint(context, name, point) dict   " {{{2
+function s:core.setPoint(context, name, point) dict                                     " {{{2
   " arguments check
   if a:context !~# self.contextPattern
     throw 's:core.setPoint(context, name) gots an invalid a:context string'
@@ -262,17 +262,17 @@ function s:core.setPoint(context, name, point) dict   " {{{2
   call self.saveStat()
 endfunction " }}}2
 
-function s:core.banColor(context, name) dict          " {{{2
+function s:core.banColor(context, name) dict                                            " {{{2
   call self.setPoint(a:context, a:name, -1)
 endfunction " }}}2
 
 " reset the point of current vim color and roll to next color.
-function s:core.banCurColor() dict                    " {{{2
+function s:core.banCurColor() dict                                                      " {{{2
   call self.banColor(self.getCurContext(), self.getCurColor())
   call self.colorRandom()
 endfunction " }}}2
 
-function s:core.incrementPoint(context, name) dict    " {{{2
+function s:core.incrementPoint(context, name) dict                                      " {{{2
   " arguments check
   if a:context !~# self.contextPattern
     throw 's:core.incrementPoint(context, name) gots an invalid a:context string'
@@ -292,7 +292,7 @@ function s:core.incrementPoint(context, name) dict    " {{{2
   endif
 endfunction " }}}2
 
-function s:core.decrementPoint(context, name) dict    " {{{2
+function s:core.decrementPoint(context, name) dict                                      " {{{2
   if a:context !~# self.contextPattern
     throw 's:core.decrementPoint(context, name) gots an invalid a:context string'
   endif
@@ -311,12 +311,12 @@ function s:core.decrementPoint(context, name) dict    " {{{2
   endif
 endfunction " }}}2
 
-function s:core.colorRandom() dict                    " {{{2
+function s:core.colorRandom() dict                                                      " {{{2
   let picked = self.roll()
   execute 'colorscheme ' . picked
 endfunction " }}}2
 
-function s:core.showCurColors() dict                  " {{{2
+function s:core.showCurColors() dict                                                    " {{{2
   " make sure current color in current context gain at least 1 point.
   let name           = self.getCurColor()
   let context        = self.getCurContext()
@@ -328,7 +328,7 @@ function s:core.showCurColors() dict                  " {{{2
   echo msg
 endfunction " }}}2
 
-function s:core.editColorFile(name)                   " {{{2
+function s:core.editColorFile(name)                                                     " {{{2
   let paths = split(globpath(&rtp, printf('colors/%s.vim', a:name), 1), "\n")
   if len(paths) == 0
     throw printf('color file [%s] not found in &rtp.', a:name)
@@ -340,7 +340,7 @@ function s:core.editColorFile(name)                   " {{{2
 endfunction " }}}2
 
 " TODO: reimplement it
-function s:core.coloMarquee() dict                    " {{{2
+function s:core.coloMarquee() dict                                                      " {{{2
   " let cur_color = g:colors_name
 
   " for c in s:core.vim_color_avail
@@ -356,7 +356,7 @@ endfunction " }}}2
 
 " autocmd callback functions.
 
-function s:core.onColorScheme() dict                  " {{{2
+function s:core.onColorScheme() dict                                                    " {{{2
   let new_color = self.getCurColor()
   let old_color = self.lastColor
 
@@ -376,7 +376,7 @@ function s:core.onColorScheme() dict                  " {{{2
         \ )
 endfunction " }}}2
 
-function s:core.onVimEnter() dict                     " {{{2
+function s:core.onVimEnter() dict                                                       " {{{2
   call self.colorRandom()
   " by default, vim event dost no allow nesting.
   " simulate ColorScheme that the above .colorRandom() call would incur.
@@ -390,7 +390,7 @@ function s:core.onVimEnter() dict                     " {{{2
   call self.showCurColors()
 endfunction " }}}2
 
-function s:core.onVimLeavePre() dict                  " {{{2
+function s:core.onVimLeavePre() dict                                                    " {{{2
   if self.lastContext !=# self.getCurContext()
     call self.decrementPoint(self.lastContext, self.lastColor)
     call self.incrementPoint(self.getCurContext(), self.lastColor)
@@ -401,21 +401,21 @@ call s:core.init()
 
 "}}}1
 
-" PUBLIC INTERFACES                                  {{{1
+" PUBLIC INTERFACES                                                                    {{{1
 
-function <SID>NextColor()                             " {{{2
+function <SID>NextColor()                                                               " {{{2
   call s:core.colorRandom()
 endfunction " }}}2
 
-function <SID>ShowCurColors()                         " {{{2
+function <SID>ShowCurColors()                                                           " {{{2
   call s:core.showCurColors()
 endfunction " }}}2
 
-function <SID>Ban()                                   " {{{2
+function <SID>Ban()                                                                     " {{{2
   call s:core.banCurColor()
 endfunction " }}}2
 
-function <SID>EditCurrentColor()                      " {{{2
+function <SID>EditCurrentColor()                                                        " {{{2
   try
     let name = s:core.getCurColor()
     call s:core.editColorFile(name)
