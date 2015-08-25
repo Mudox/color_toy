@@ -27,8 +27,9 @@ function s:core.init() dict                                                     
         \ . ' -- '
         \ . '\(\w\+\)$'    " color name
 
-  let self.lastContext = self.getCurContext()
-  let self.lastColor = self.getCurColor()
+  let self.lastContext   = self.getCurContext()
+  let self.lastColor     = self.getCurColor()
+  let self.lastLastColor = self.getCurColor()
 
   let self.stat_pool = {}
 
@@ -368,7 +369,6 @@ endfunction " }}}2
 " autocmd callback functions.
 function s:core.onColorScheme() dict                                              "    {{{2
   let new_color = self.getCurColor()
-  let old_color = self.lastColor
 
   call self.decrementPoint(self.lastContext, self.lastColor)
 
@@ -379,15 +379,7 @@ function s:core.onColorScheme() dict                                            
   call self.incrementPoint(self.lastContext, self.lastColor)
 endfunction " }}}2
 
-function s:core.onVimEnter() dict                                                 "    {{{2
-  augroup  kaleidocsope_on_vim_enter
-    autocmd FileType *
-          \ call s:core.setInitialColor()
-          \| autocmd! kaleidocsope_on_vim_enter
-  augroup END
-endfunction " }}}2
-
-function s:core.setInitialColor() " {{{2
+function s:core.setInitialColor()                                                 "    {{{2
   call self.colorRandom()
   call self.onColorScheme()
 endfunction "  }}}2
@@ -443,7 +435,11 @@ augroup Mdx_Kaleidoscope
   autocmd!
   autocmd ColorScheme * call s:core.onColorScheme()
   autocmd VimLeavePre * call s:core.onVimLeavePre()
-  autocmd VimEnter    * call s:core.onVimEnter()
+augroup END
+
+augroup Mdx_Kaleidoscope_Initial_BufEnter
+  autocmd BufEnter    * call s:core.setInitialColor()
+        \| autocmd! Mdx_Kaleidoscope_Initial_BufEnter
 augroup END
 
 command -nargs=0 KaleidoscopeReset call s:core.resetStat()
