@@ -381,7 +381,7 @@ endfunction " }}}2
 
 function s:core.onVimEnter() dict                                                 "    {{{2
   augroup  kaleidocsope_on_vim_enter
-    autocmd BufEnter *
+    autocmd FileType *
           \ call s:core.setInitialColor()
           \| autocmd! kaleidocsope_on_vim_enter
   augroup END
