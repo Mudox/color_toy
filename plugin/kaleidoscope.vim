@@ -1,4 +1,4 @@
-" vim: foldmethod=marker
+" vim: foldmethod=marker foldcolumn=2
 
 " GUARD                                                                             {{{1
 if exists("s:loaded") || &cp || version < 700
@@ -116,16 +116,16 @@ function s:core.colorsAvail() dict                                              
   return list
 endfunction " }}}2
 
-" return a list of (name, count) binary tuples, sorted by count in descending
+" return a list of (name, count) 2-tuples, sorted by count in descending
 " order.
 function s:core.getInnerBoardSorted(context) dict                                 "    {{{2
   return s:dict2SortedList(self.getInnerBoard(a:context))
 endfunction " }}}2
 
-" raturn a list of (name, count) binary turples of all available colors.
+" raturn a list of (name, count) 2-tuples of all available colors.
 function s:core.getVirtualBoardSorted() dict                                      "    {{{2
   let virtual_board = {}
-  " initialize all color with 0 cnt
+  " initialize all color with 0 count point
   for name in self.colorsAvail()
     let virtual_board[name] = 0
   endfor
@@ -171,7 +171,7 @@ function s:dict2SortedList(the_dict)                                            
 endfunction " }}}2
 
 function s:core.roll() dict                                                       "    {{{2
-  " build virtual score board & exclud last color from it.
+  " build virtual score board.
   let board = self.getVirtualBoardSorted()
 
   " exclude current (old) color.
@@ -205,7 +205,7 @@ endfunction " }}}2
 function s:core.getInnerBoard(context) dict                                       "    {{{2
   " arguemnts check
   if a:context !~# self.contextPattern
-    throw 's:core.getInnerBoard(context) gots an invalid a:context string'
+    throw 'invalid a:context string: ' . a:context
   endif
 
   " sync from disk.
@@ -315,8 +315,8 @@ function s:core.decrementPoint(context, name) dict                              
 endfunction " }}}2
 
 function s:core.colorRandom() dict                                                "    {{{2
+  let g:last_context = self.getCurContext()
   let picked = self.roll()
-  echo 'picked colorscheme - ' . picked
   execute 'colorscheme ' . picked
 endfunction " }}}2
 
@@ -366,7 +366,6 @@ function s:core.coloMarquee() dict                                              
 endfunction " }}}2
 
 " autocmd callback functions.
-
 function s:core.onColorScheme() dict                                              "    {{{2
   let new_color = self.getCurColor()
   let old_color = self.lastColor
@@ -381,18 +380,17 @@ function s:core.onColorScheme() dict                                            
 endfunction " }}}2
 
 function s:core.onVimEnter() dict                                                 "    {{{2
-  call self.colorRandom()
-  " by default, vim event dost no allow nesting.
-  " simulate ColorScheme that the above .colorRandom() call would incur.
-  call self.onColorScheme()
-
-  if exists(':AirlineTheme')
-    AirlineTheme ubaryd
-  endif
-
-  "redraw
-  call self.showCurColors()
+  augroup  kaleidocsope_on_vim_enter
+    autocmd BufEnter *
+          \ call s:core.setInitialColor()
+          \| autocmd! kaleidocsope_on_vim_enter
+  augroup END
 endfunction " }}}2
+
+function s:core.setInitialColor() " {{{2
+  call self.colorRandom()
+  call self.onColorScheme()
+endfunction "  }}}2
 
 function s:core.onVimLeavePre() dict                                              "    {{{2
   if self.lastContext !=# self.getCurContext()
