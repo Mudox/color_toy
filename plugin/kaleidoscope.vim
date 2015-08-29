@@ -1,4 +1,4 @@
-" vim: foldmethod=marker foldcolumn=2
+" vim: foldmethod=marker
 
 " GUARD                                                                             {{{1
 if exists("s:loaded") || &cp || version < 700
@@ -16,7 +16,7 @@ function s:core.init() dict                                                     
   let self.fileName = expand(get(g:, "kaleidoscope_stat_file",
         \ '~/.vim_kaleidoscope'))
   "let self.background = expand(get(g:, "kaleidoscope_backgroud",
-        "\ 'dark'))
+  "\ 'dark'))
 
   let self.contextPattern = '\m\C^'
         \ . '\%(gui\|term\)_'
@@ -368,15 +368,26 @@ endfunction " }}}2
 
 " autocmd callback functions.
 function s:core.onColorScheme() dict                                              "    {{{2
+  "let info_tmpl = printf("%s\n\t%s\n\t%s",
+  "\ "%s: colorscheme ft: %s",
+  "\ "\tbefore color: %20s context: %s",
+  "\ "\tafter color: %20s context: %s")
+
+  "let info = printf(info_tmpl, strftime('%X'), &ft,
+  "\ self.lastColor, self.lastContext,
+  "\ self.getCurColor(), self.getCurContext())
+
+  "call writefile(split(info, "\n"), '/tmp/k.log', 'a')
+
   let new_color = self.getCurColor()
 
-  call self.decrementPoint(self.lastContext, self.lastColor)
+  call self.decrementPoint(self.getCurContext(), self.lastColor)
+  call self.incrementPoint(self.getCurContext(), new_color)
 
   let self.lastLastColor = self.lastColor
   let self.lastColor = new_color
   let self.lastContext = self.getCurContext()
 
-  call self.incrementPoint(self.lastContext, self.lastColor)
 endfunction " }}}2
 
 function s:core.setInitialColor()                                                 "    {{{2
@@ -434,13 +445,18 @@ nnoremap <Plug>(Mdx_Kaleidoscope_Edit_Current_Color)
 augroup Mdx_Kaleidoscope
   autocmd!
   autocmd ColorScheme * call s:core.onColorScheme()
+        \| if exists(':AirlineRefresh') | AirlineRefresh | endif
+
   autocmd VimLeavePre * call s:core.onVimLeavePre()
 augroup END
 
 augroup Mdx_Kaleidoscope_Initial_BufEnter
+  autocmd!
   autocmd BufEnter    * call s:core.setInitialColor()
+        \| if exists(':AirlineRefresh') | AirlineRefresh | endif
         \| autocmd! Mdx_Kaleidoscope_Initial_BufEnter
 augroup END
 
 command -nargs=0 KaleidoscopeReset call s:core.resetStat()
+
 "}}}
