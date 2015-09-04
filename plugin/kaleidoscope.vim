@@ -348,7 +348,7 @@ function s:core.editColorFile(name)                                             
     echo printf("found multiple files: %s.\nedit the first one.", paths)
   endif
 
-  call mudox#query_open_file#New(paths[0])
+  call Qpen(paths[0])
 endfunction " }}}2
 
 " TODO: reimplement it
