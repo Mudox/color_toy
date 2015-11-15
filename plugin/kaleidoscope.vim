@@ -348,6 +348,7 @@ function s:core.editColorFile(name)                                             
     echo printf("found multiple files: %s.\nedit the first one.", paths)
   endif
 
+  " TODO!: need a try outside to catch Qpen() cancelling
   call Qpen(paths[0])
 endfunction " }}}2
 
